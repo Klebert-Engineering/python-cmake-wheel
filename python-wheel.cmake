@@ -1,0 +1,110 @@
+include(python-wheel-globals)
+
+set(PY_WHEEL_SETUP_FILE "${CMAKE_CURRENT_LIST_DIR}/setup.py.in" CACHE INTERNAL "")
+
+# Target for building all added wheels
+add_custom_target(wheel)
+
+# Function for transforming a CMake string array LIST
+# to a python array OUT (without brackets).
+macro (to_python_list_string LIST OUT)
+  list(TRANSFORM ${LIST} PREPEND "'")
+  list(TRANSFORM ${LIST} APPEND "'")
+  list(JOIN ${LIST} ", " ${OUT})
+endmacro()
+
+# Copy SOURCE's target file, or if SOURCE is an interface-lib:
+# all linked target files to the destination DEST. Add the
+# command to the target TARGET.
+function (_copy_target TARGET SOURCE DEST)
+  get_target_property(source_type ${SOURCE} TYPE)
+
+  if (source_type STREQUAL "INTERFACE_LIBRARY")
+    get_target_property(source_libs ${SOURCE} INTERFACE_LINK_LIBRARIES)
+    foreach (source_lib IN LISTS source_libs)
+      add_custom_command(TARGET ${TARGET}
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${source_lib}>" "${DEST}")
+    endforeach()
+  else()
+    add_custom_command(TARGET ${TARGET}
+      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${SOURCE}>" "${DEST}")
+  endif()
+endfunction()
+
+function (add_wheel WHEEL_TARGET)
+  set(Python_FIND_VIRTUALENV FIRST) # Favor venv over system install
+  find_package(Python3 COMPONENTS Interpreter)
+
+  if (NOT Python3_FOUND)
+    message(FATAL_ERROR "Could not find python3 interpreter!")
+  endif()
+
+  # Parse arguments
+  cmake_parse_arguments(WHEEL
+    "" "VERSION;DESCRIPTION;README_PATH;LICENSE_PATH" "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES" ${ARGN})
+
+  to_python_list_string(WHEEL_MODULE_DEPENDENCIES WHEEL_MODULE_DEPENDENCIES_PYLIST)
+
+  if (NOT WHEEL_VERSION)
+    message(FATAL_ERROR "Missing wheel version.")
+  endif()
+
+  if (NOT WHEEL_LICENSE_PATH)
+    # Default license file
+    set(WHEEL_LICENSE_PATH "${CMAKE_SOURCE_DIR}/LICENSE")
+  endif()
+
+  # Set up wheel build dir
+  set(WHEEL_NAME "${WHEEL_TARGET}")
+  set(WHEEL_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/${WHEEL_NAME}.wheel/")
+  file(REMOVE_RECURSE "${WHEEL_LIB_DIR}")
+  file(MAKE_DIRECTORY "${WHEEL_LIB_DIR}")
+
+  # Copy module + dependencies into build dir
+  add_custom_target(${WHEEL_TARGET}-copy-files)
+  _copy_target(${WHEEL_TARGET}-copy-files ${WHEEL_TARGET} "${WHEEL_LIB_DIR}")
+  add_dependencies(${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
+
+  foreach (dep IN LISTS WHEEL_TARGET_DEPENDENCIES)
+    if (TARGET ${dep})
+      add_dependencies(${WHEEL_TARGET} ${dep})
+
+      _copy_target(${WHEEL_TARGET}-copy-files ${dep} ${WHEEL_LIB_DIR})
+    else()
+      message(FATAL_ERROR "Not a target ${dep}")
+    endif()
+  endforeach()
+
+  if (WHEEL_LICENSE_PATH)
+    add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
+      COMMAND ${CMAKE_COMMAND} -E copy "${WHEEL_LICENSE_PATH}" "${WHEEL_LIB_DIR}/LICENSE.txt")
+  endif()
+
+  if (WHEEL_README_PATH)
+    add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
+      COMMAND ${CMAKE_COMMAND} -E copy "${WHEEL_README_PATH}" "${WHEEL_LIB_DIR}/README.txt")
+  endif()
+
+  if (WHEEL_DEPLOY_FILES)
+    foreach (file IN LISTS WHEEL_DEPLOY_FILES)
+      add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying file from ${file} to ${WHEEL_LIB_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${file}" "${WHEEL_LIB_DIR}/")
+    endforeach()
+  endif()
+
+  set(SETUP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${WHEEL_NAME}.setup.py")
+  configure_file("${PY_WHEEL_SETUP_FILE}" "${SETUP_FILE}")
+
+  add_custom_target(${WHEEL_TARGET}-setup-py
+    COMMAND ${CMAKE_COMMAND} -E env
+      "TMPDIR=${CMAKE_BINARY_DIR}"
+      "TEMP=${CMAKE_BINARY_DIR}"
+      "${Python3_EXECUTABLE}" "${SETUP_FILE}" "bdist_wheel"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+
+  add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
+
+  add_dependencies(wheel ${WHEEL_TARGET}-setup-py)
+endfunction()
