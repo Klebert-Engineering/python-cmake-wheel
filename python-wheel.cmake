@@ -33,11 +33,7 @@ endfunction()
 
 function (add_wheel WHEEL_TARGET)
   set(Python_FIND_VIRTUALENV FIRST) # Favor venv over system install
-  find_package(Python3 COMPONENTS Interpreter)
-
-  if (NOT Python3_FOUND)
-    message(FATAL_ERROR "Could not find python3 interpreter!")
-  endif()
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
   # Parse arguments
   cmake_parse_arguments(WHEEL
