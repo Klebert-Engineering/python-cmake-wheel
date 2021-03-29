@@ -18,6 +18,7 @@ RUN cd /usr/local/src && \
     ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
     make install
 ENV OPENSSL_ROOT_DIR=/usr/local/ssl
+ENV LD_LIBRARY_PATH="/usr/local/ssl/lib:$LD_LIBRARY_PATH"
 
 # Install Python 3.8
 ADD https://www.python.org/ftp/python/3.8.3/Python-3.8.3.tgz /usr/local/src
@@ -28,4 +29,4 @@ RUN cd /usr/local/src && \
     make install
 RUN ln -s /usr/local/src/Python-3.8.3/libpython3.8.so.1.0 /lib64/libpython3.8.so.1.0
 RUN pip3.8 install wheel
-# ENV LD_LIBRARY_PATH=/usr/local/src/Python-3.8.3
+RUN pip3.8 install -U pip

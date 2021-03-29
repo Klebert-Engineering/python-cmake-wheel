@@ -1,7 +1,4 @@
-find_package(Python3 COMPONENTS Interpreter)
-if (NOT Python3_FOUND)
-  message(FATAL_ERROR "Could not find python3 interpreter!")
-endif()
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 # Guess python wheel filename infixes (abi + platform) to be used
 # with binary python module dependency URLs.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 image_name="manylinux-cpp17-py3.8"
-version="2021.1"
+version="2021.2"
 push=""
 latest=""
 test=""
