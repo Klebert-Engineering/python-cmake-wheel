@@ -37,12 +37,26 @@ function (add_wheel WHEEL_TARGET)
 
   # Parse arguments
   cmake_parse_arguments(WHEEL
-    "" "VERSION;DESCRIPTION;README_PATH;LICENSE_PATH" "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES" ${ARGN})
+    ""
+    "AUTHOR;URL;PYTHON_REQUIRES;VERSION;DESCRIPTION;README_PATH;LICENSE_PATH"
+    "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES" ${ARGN})
 
   to_python_list_string(WHEEL_MODULE_DEPENDENCIES WHEEL_MODULE_DEPENDENCIES_PYLIST)
 
   if (NOT WHEEL_VERSION)
     message(FATAL_ERROR "Missing wheel version.")
+  endif()
+
+  if (NOT WHEEL_AUTHOR)
+    message(FATAL_ERROR "Missing wheel author.")
+  endif()
+
+  if (NOT WHEEL_URL)
+    set(WHEEL_URL "")
+  endif()
+
+  if (NOT WHEEL_PYTHON_REQUIRES)
+    set(WHEEL_PYTHON_REQUIRES ">=3.8")
   endif()
 
   if (NOT WHEEL_LICENSE_PATH)

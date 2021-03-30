@@ -10,6 +10,7 @@ find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 #   - https://www.python.org/dev/peps/pep-0427/#file-name-convention
 #   - https://github.com/pypa/wheel/blob/master/src/wheel/bdist_wheel.py#L43
 set(PY_WHEEL_C_ABI "cp${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}-cp${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}")
+message("System is ${CMAKE_HOST_SYSTEM_NAME} @ ${CMAKE_HOST_SYSTEM_VERSION}.")
 
 if (WIN32)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -19,7 +20,7 @@ if (WIN32)
   endif()
 elseif (APPLE)
   # NOTE: This is the build servers OSX version!
-  set(PY_WHEEL_PLATFORM "macosx_10_14_x86_64")
+  set(PY_WHEEL_PLATFORM "macosx_10_15_x86_64")
 else()
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(PY_WHEEL_PLATFORM "linux_x86_64")

@@ -23,6 +23,12 @@ add_library(mylib ...)
 # Adapt using the following parameters:
 # VERSION
 #  Python package version.
+# AUTHOR
+#  Package author name.
+# URL
+#  Package website.
+# PYTHON_REQUIRES
+#  Python version requirement. Default: >=3.8
 # DESCRIPTION
 #  Python package short description.
 # DEPLOY_FILES
@@ -33,6 +39,9 @@ add_library(mylib ...)
 #  Python module dependencies (requirements.txt content)
 add_wheel(mylib
   VERSION "0.0.1"
+  AUTHOR "Bob Ross"
+  URL "http://python.org"
+  PYTHON_REQUIRES ">=3.8"
   DESCRIPTION "Binary Python wheel."
   DEPLOY_FILES "MY_LICENSE.txt"
   TARGET_DEPENDENCIES

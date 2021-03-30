@@ -90,12 +90,12 @@ setup(
     name = "@WHEEL_NAME@",
     version = "@WHEEL_VERSION@",
     description = "@WHEEL_DESCRIPTION@",
-    author = "NDS e.V.",
-    url = "https://nds-association.org",
+    author = "@WHEEL_AUTHOR@",
+    url = "@WHEEL_URL@",
 
     ext_modules = [CMakeExtension("@WHEEL_NAME@")],
     keywords = "@WHEEL_NAME@",
-    python_requires = ">=3.8",
+    python_requires = "@WHEEL_PYTHON_REQUIRES@",
     install_requires = [
         @WHEEL_MODULE_DEPENDENCIES_PYLIST@
     ],
