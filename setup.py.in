@@ -53,6 +53,7 @@ class cmake_build_ext(build_ext):
             self.spawn(['cmake', '--build', self.build_temp, '--target', '@WHEEL_TARGET@'])
 
             for f in os.listdir(extdir):
+                print(f"cmake_build_ext: Processing {f} (Platform {platform.system()})")
                 file_path = os.path.join(extdir, f)
                 if platform.system() == 'Linux':
                     if f.endswith('.so'):
