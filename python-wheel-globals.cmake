@@ -1,5 +1,12 @@
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
+# Some RPATH setup for macOS
+if (APPLE)
+  set(CMAKE_MACOSX_RPATH ON)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};@loader_path")
+endif()
+
 # Guess python wheel filename infixes (abi + platform) to be used
 # with binary python module dependency URLs.
 #
