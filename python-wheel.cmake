@@ -70,6 +70,15 @@ function (add_wheel WHEEL_TARGET)
   file(REMOVE_RECURSE "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_LIB_DIR}")
 
+  # Only one wheel allowed per project.
+  file(GLOB LOCAL_WHEEL_LIST "${CMAKE_CURRENT_BINARY_DIR}/*.wheel")
+  list(LENGTH LOCAL_WHEEL_LIST LOCAL_WHEEL_LIST_LENGTH)
+  if (LOCAL_WHEEL_LIST_LENGTH GREATER 1)
+    message(FATAL_ERROR "You cannot create more than one wheel in the same binary dir.")
+  elseif (LOCAL_WHEEL_LIST_LENGTH LESS 1)
+    message(FATAL_ERROR "This should not happen.")
+  endif()
+
   # Copy module + dependencies into build dir
   add_custom_target(${WHEEL_TARGET}-copy-files)
   _copy_target(${WHEEL_TARGET}-copy-files ${WHEEL_TARGET} "${WHEEL_LIB_DIR}")
@@ -104,15 +113,14 @@ function (add_wheel WHEEL_TARGET)
     endforeach()
   endif()
 
-  set(SETUP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${WHEEL_NAME}.setup.py")
+  set(SETUP_FILE "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
   configure_file("${PY_WHEEL_SETUP_FILE}" "${SETUP_FILE}")
 
   add_custom_target(${WHEEL_TARGET}-setup-py
-    COMMAND ${CMAKE_COMMAND} -E env
-      "TMPDIR=${CMAKE_BINARY_DIR}"
-      "TEMP=${CMAKE_BINARY_DIR}"
-      "${Python3_EXECUTABLE}" "${SETUP_FILE}" "bdist_wheel"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+    COMMAND
+      "${Python3_EXECUTABLE}" "-m" "pip" "wheel"
+        "${CMAKE_CURRENT_BINARY_DIR}"
+        "-w" "${WHEEL_DEPLOY_DIRECTORY}")
 
   add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
 
