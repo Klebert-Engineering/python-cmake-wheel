@@ -1,0 +1,32 @@
+FROM quay.io/pypa/manylinux2014_x86_64
+
+RUN yum update -y && yum install -y \
+    ant \
+    zlib-devel \
+    perl-core \
+    ninja-build \
+    libsecret-devel \
+    bzip2-devel \
+    libffi-devel \
+    openssl-devel
+
+# Install OpenSSL 1.1
+ADD https://www.openssl.org/source/openssl-1.1.1d.tar.gz /usr/local/src
+RUN cd /usr/local/src && \
+    tar -xzvf openssl-1.1.1d.tar.gz && \
+    cd openssl-1.1.1d && \
+    ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
+    make install
+ENV OPENSSL_ROOT_DIR=/usr/local/ssl
+ENV LD_LIBRARY_PATH="/usr/local/ssl/lib:$LD_LIBRARY_PATH"
+
+# Install Python
+ADD https://www.python.org/ftp/python/${pyver_long}/Python-${pyver_long}.tgz /usr/local/src
+RUN cd /usr/local/src && \
+    tar -xzvf Python-${pyver_long}.tgz && \
+    cd Python-${pyver_long} && \
+    ./configure --enable-optimizations --enable-shared && \
+    make install
+RUN ln -s /usr/local/src/Python-${pyver_long}/libpython${pyver_short}.so.1.0 /lib64/libpython${pyver_short}.so.1.0
+RUN pip${pyver_short} install wheel
+RUN pip${pyver_short} install -U pip

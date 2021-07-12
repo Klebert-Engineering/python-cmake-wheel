@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 
-image_name="manylinux-cpp17-py3.8"
-version="2021.2"
+image_name="manylinux-cpp17-py"
+version="2021.3"
 push=""
 latest=""
-test=""
+python_versions=(3.8.3 3.9.2)
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -i|--image-name)
-      image_name=$2
-      shift
-      shift
-      ;;
     -v|--version)
       version=$2
       shift
@@ -26,25 +21,33 @@ while [[ $# -gt 0 ]]; do
       latest="yes"
       shift
       ;;
-    -t|--test)
-      test="yes"
-      shift
-      ;;
   esac
 done
 
-image_name="ghcr.io/klebert-engineering/$image_name"
-docker build -t "$image_name:$version" .
 
-if [[ -n "$latest" ]]; then
-  echo "Tagging latest."
-  docker tag "$image_name:$version" "$image_name:latest"
-fi
+for pyver_long in "${python_versions[@]}"; do
 
-if [[ -n "$push" ]]; then
-  echo "Pushing."
-  docker push "$image_name:$version"
-  if [[ -n "$latest" ]]; then
-    docker push "$image_name:latest"
-  fi
-fi
+    echo "Building manylinux Docker image for Python $pyver_long..."
+
+    pyver_short=$(echo "$pyver_long" | sed "s/\\.[0-9]\$//")
+
+    sed -e "s/\${pyver_long}/$pyver_long/g" \
+        -e "s/\${pyver_short}/$pyver_short/g" \
+        Dockerfile.template > "Dockerfile-$pyver_long"
+
+    image_name_full="ghcr.io/klebert-engineering/$image_name$pyver_short"
+    docker build -t "$image_name_full:$version" -f "Dockerfile-$pyver_long" .
+
+    if [[ -n "$latest" ]]; then
+      echo "Tagging latest."
+      docker tag "$image_name_full:$version" "$image_name_full:latest"
+    fi
+
+    if [[ -n "$push" ]]; then
+      echo "Pushing."
+      docker push "$image_name_full:$version"
+      if [[ -n "$latest" ]]; then
+        docker push "$image_name_full:latest"
+      fi
+    fi
+done
