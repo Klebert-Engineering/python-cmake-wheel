@@ -9,13 +9,18 @@ python3 -m venv "$venv"
 source "$venv/$activate_path"
 python -m pip install -U pip
 
-trap 'echo "→ Killing $(jobs -p)"; kill $(jobs -p); echo "→ Removing $venv"; rm -rf "$venv"' EXIT
+trap '
+  if [[ -n $(jobs -p) ]]; then
+    echo "→ Killing $(jobs -p)"
+    kill $(jobs -p)
+  fi
+  echo "→ Removing $venv"; rm -rf "$venv"' EXIT
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -w|--wheels-dir)
       echo "→ Installing wheels from $2 ..."
-      pip install "$2"/*
+      pip install --no-deps "$2"/*
       shift
       shift
       ;;
