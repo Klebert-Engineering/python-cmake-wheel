@@ -8,6 +8,7 @@ echo "→ Setting up a virtual environment in $venv ..."
 python3 -m venv "$venv"
 source "$venv/$activate_path"
 python -m pip install -U pip
+pip install pytest
 
 trap '
   if [[ -n $(jobs -p) ]]; then
