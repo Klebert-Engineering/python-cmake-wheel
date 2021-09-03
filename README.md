@@ -17,7 +17,8 @@ set(WHEEL_DEPLOY_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 include(python-wheel)
 
-# Just some placeholder for 'mylib'
+# Placeholder statement to create the 'mylib' target.
+# In practice, this will probably be pybind11_add_module(...).
 add_library(mylib ...)
 
 # Adapt using the following parameters:
@@ -45,11 +46,9 @@ add_wheel(mylib
   DESCRIPTION "Binary Python wheel."
   DEPLOY_FILES "MY_LICENSE.txt"
   TARGET_DEPENDENCIES
-    dependency-lib
+  dependency-lib
   MODULE_DEPENDENCIES
-    pypi-dependency1 pypi-dependency2
+  pypi-dependency1 pypi-dependency2
 ```
 
-The `add_wheel` command will create a temporary setup.py for your project.
-This is run when you execute the CMake `wheel` target. After building the
-wheel target, you will find your freshly baked wheels in the `WHEEL_DEPLOY_DIRECTORY`.
+The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.

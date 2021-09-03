@@ -3,7 +3,7 @@ include(python-wheel-globals)
 set(PY_WHEEL_SETUP_FILE "${CMAKE_CURRENT_LIST_DIR}/setup.py.in" CACHE INTERNAL "")
 
 # Target for building all added wheels
-add_custom_target(wheel)
+add_custom_target(wheel ALL)
 
 # Function for transforming a CMake string array LIST
 # to a python array OUT (without brackets).
