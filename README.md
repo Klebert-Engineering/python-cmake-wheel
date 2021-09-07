@@ -46,9 +46,38 @@ add_wheel(mylib
   DESCRIPTION "Binary Python wheel."
   DEPLOY_FILES "MY_LICENSE.txt"
   TARGET_DEPENDENCIES
-  dependency-lib
+    dependency-lib
   MODULE_DEPENDENCIES
-  pypi-dependency1 pypi-dependency2
+    pypi-dependency1 pypi-dependency2)
 ```
 
 The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.
+
+## Adding tests
+
+The `python-wheel.cmake` include also provides a function that lets you easily add a cmake test for your wheel: `add_wheel_test(...)`.
+
+This function can be used as follows:
+
+```cmake
+add_wheel_test(mylib-test
+  WORKING_DIRECTORY
+    # Working directory where the test commands should be executed
+    "${CMAKE_CURRENT_LIST_DIR}"
+  COMMANDS
+    # Two types of commands are available:
+    #  -f (--foreground) are synchronous test tasks. They are executed
+    #     within a clean temporary python environment, in which all
+    #     wheels from your current WHEEL_DEPLOY_DIRECTORY are installed.
+    #  -b (--background) are asynchronous background services that need
+    #     to run while the synchronous tasks are running, for example
+    #     to implement an integration test. They will be killed when
+    #     all synchronous tasks are finished.
+    #  Note: You can specify an arbitrary number of commands for
+    #   both types. They are launched in the specified order, so
+    #   make sure to put a background service before a foreground
+    #   test script which depends on it.
+    -b "${CMAKE_BINARY_DIR}/a-service"
+    -f "pytest test.py"
+)
+```

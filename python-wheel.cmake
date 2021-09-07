@@ -1,6 +1,7 @@
 include(python-wheel-globals)
 
 set(PY_WHEEL_SETUP_FILE "${CMAKE_CURRENT_LIST_DIR}/setup.py.in" CACHE INTERNAL "")
+set(TEST_WHEEL_BASH "${CMAKE_CURRENT_LIST_DIR}/test-wheel.bash" CACHE INTERNAL "")
 
 # Target for building all added wheels
 add_custom_target(wheel ALL)
@@ -126,4 +127,25 @@ function (add_wheel WHEEL_TARGET)
   add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
 
   add_dependencies(wheel ${WHEEL_TARGET}-setup-py)
+endfunction()
+
+function (add_wheel_test TEST_NAME)
+  set(Python_FIND_VIRTUALENV FIRST) # Favor venv over system install
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
+  # Parse arguments
+  cmake_parse_arguments(WHEEL_TEST
+    ""
+    "WORKING_DIRECTORY"
+    "COMMANDS" ${ARGN})
+
+  add_test(
+    NAME
+      ${TEST_NAME}
+    WORKING_DIRECTORY
+      "${WHEEL_TEST_WORKING_DIRECTORY}"
+    COMMAND
+      bash "${TEST_WHEEL_BASH}"
+        -w "${WHEEL_DEPLOY_DIRECTORY}"
+        ${WHEEL_TEST_COMMANDS})
 endfunction()
