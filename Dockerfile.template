@@ -25,7 +25,7 @@ ADD https://www.python.org/ftp/python/${pyver_long}/Python-${pyver_long}.tgz /us
 RUN cd /usr/local/src && \
     tar -xzvf Python-${pyver_long}.tgz && \
     cd Python-${pyver_long} && \
-    ./configure --enable-optimizations --enable-shared && \
+    ./configure --enable-optimizations --enable-shared --with-openssl=$OPENSSL_ROOT_DIR --with-openssl-rpath=auto && \
     make install
 RUN ln -s /usr/local/src/Python-${pyver_long}/libpython${pyver_short}.so.1.0 /lib64/libpython${pyver_short}.so.1.0
 RUN pip${pyver_short} install wheel

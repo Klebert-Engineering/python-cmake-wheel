@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 image_name="manylinux-cpp17-py"
-version="2021.3"
+version="2023.1"
 push=""
 latest=""
-python_versions=(3.8.3 3.9.2)
+python_versions=(3.8.10 3.9.13 3.10.9 3.11.1)
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -27,9 +27,9 @@ done
 
 for pyver_long in "${python_versions[@]}"; do
 
-    echo "Building manylinux Docker image for Python $pyver_long..."
+    pyver_short=$(echo "$pyver_long" | sed "s/\\.[0-9]\+\$//")
 
-    pyver_short=$(echo "$pyver_long" | sed "s/\\.[0-9]\$//")
+    echo "Building manylinux Docker image for Python $pyver_short ($pyver_long)..."
 
     sed -e "s/\${pyver_long}/$pyver_long/g" \
         -e "s/\${pyver_short}/$pyver_short/g" \
