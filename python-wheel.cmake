@@ -87,14 +87,14 @@ function (add_wheel WHEEL_TARGET)
 
   # Copy module + dependencies into build dir
   add_custom_target(${WHEEL_TARGET}-copy-files)
-  _copy_target(${WHEEL_TARGET}-copy-files ${WHEEL_TARGET} "${WHEEL_LIB_DIR}")
+  _copy_target(${WHEEL_TARGET}-copy-files ${WHEEL_TARGET} "${WHEEL_PACKAGE_DIR}")
   add_dependencies(${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
 
   foreach (dep IN LISTS WHEEL_TARGET_DEPENDENCIES)
     if (TARGET ${dep})
       add_dependencies(${WHEEL_TARGET} ${dep})
 
-      _copy_target(${WHEEL_TARGET}-copy-files ${dep} ${WHEEL_LIB_DIR})
+      _copy_target(${WHEEL_TARGET}-copy-files ${dep} ${WHEEL_PACKAGE_DIR})
     else()
       message(FATAL_ERROR "Not a target ${dep}")
     endif()
@@ -102,20 +102,20 @@ function (add_wheel WHEEL_TARGET)
 
   if (WHEEL_LICENSE_PATH)
     add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
-      COMMAND ${CMAKE_COMMAND} -E copy "${WHEEL_LICENSE_PATH}" "${WHEEL_LIB_DIR}/LICENSE.txt")
+      COMMAND ${CMAKE_COMMAND} -E copy "${WHEEL_LICENSE_PATH}" "${WHEEL_PACKAGE_DIR}/LICENSE.txt")
   endif()
 
   if (WHEEL_README_PATH)
     add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
-      COMMAND ${CMAKE_COMMAND} -E copy "${WHEEL_README_PATH}" "${WHEEL_LIB_DIR}/README.txt")
+      COMMAND ${CMAKE_COMMAND} -E copy "${WHEEL_README_PATH}" "${WHEEL_PACKAGE_DIR}/README.txt")
   endif()
 
   if (WHEEL_DEPLOY_FILES)
     foreach (file IN LISTS WHEEL_DEPLOY_FILES)
       add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying file from ${file} to ${WHEEL_LIB_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy "${file}" "${WHEEL_LIB_DIR}/")
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying file from ${file} to ${WHEEL_PACKAGE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${file}" "${WHEEL_PACKAGE_DIR}/")
     endforeach()
   endif()
 
