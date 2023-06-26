@@ -29,9 +29,9 @@ class cmake_build_ext(build_ext):
         self.copy_extensions_to_source()
 
     def fix_linux_loader_paths(self):
-        for f in os.listdir('@WHEEL_LIB_DIR@'):
+        for f in os.listdir('@WHEEL_PACKAGE_DIR@'):
             print(f"cmake_build_ext: Fixing {f}")
-            file_path = os.path.join('@WHEEL_LIB_DIR@', f)
+            file_path = os.path.join('@WHEEL_PACKAGE_DIR@', f)
             if f.endswith('.so'):
                 self.spawn(['patchelf', '--set-rpath', '$ORIGIN', file_path])
 
@@ -68,7 +68,7 @@ setup(
     install_requires = [
         @WHEEL_MODULE_DEPENDENCIES_PYLIST@
     ],
-    package_dir = {"": "@WHEEL_LIB_DIR@"},
+    package_dir = {"": "@WHEEL_NAME@.wheel"},
     packages = ["@WHEEL_NAME@"],
     package_data = {
         "@WHEEL_NAME@": ["*"]
