@@ -67,14 +67,14 @@ function (add_wheel WHEEL_TARGET)
 
   # Set up wheel build dir
   set(WHEEL_NAME "${WHEEL_TARGET}")
-  set(WHEEL_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/${WHEEL_NAME}.wheel/")
-  set(PACKAGE_DIR "${WHEEL_LIB_DIR}/${WHEEL_NAME}")
+  set(WHEEL_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/${WHEEL_NAME}.wheel")
+  set(WHEEL_PACKAGE_DIR "${WHEEL_LIB_DIR}/${WHEEL_NAME}")
 
   # Create the package directory and __init__.py
   file(REMOVE_RECURSE "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_LIB_DIR}")
-  file(MAKE_DIRECTORY "${PACKAGE_DIR}")
-  file(WRITE "${PACKAGE_DIR}/__init__.py" "")
+  file(MAKE_DIRECTORY "${WHEEL_PACKAGE_DIR}")
+  file(WRITE "${WHEEL_PACKAGE_DIR}/__init__.py" "")
 
   # Only one wheel allowed per project.
   file(GLOB LOCAL_WHEEL_LIST "${CMAKE_CURRENT_BINARY_DIR}/*.wheel")
