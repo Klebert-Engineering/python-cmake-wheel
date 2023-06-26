@@ -74,7 +74,7 @@ function (add_wheel WHEEL_TARGET)
   file(REMOVE_RECURSE "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_PACKAGE_DIR}")
-  file(WRITE "${WHEEL_PACKAGE_DIR}/__init__.py" "")
+  file(WRITE "${WHEEL_PACKAGE_DIR}/__init__.py" "from .${WHEEL_NAME} import *")
 
   # Only one wheel allowed per project.
   file(GLOB LOCAL_WHEEL_LIST "${CMAKE_CURRENT_BINARY_DIR}/*.wheel")
