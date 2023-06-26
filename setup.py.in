@@ -23,7 +23,7 @@ class CMakeExtension(Extension):
 class cmake_build_ext(build_ext):
     def run(self):
         self.build_temp = '@CMAKE_BINARY_DIR@'
-        self.build_lib = '@WHEEL_LIB_DIR@'
+        self.build_lib = '@WHEEL_PACKAGE_DIR@'
         if platform.system() == 'Linux':
             self.fix_linux_loader_paths()
         self.copy_extensions_to_source()
