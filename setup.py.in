@@ -68,6 +68,10 @@ setup(
     install_requires = [
         @WHEEL_MODULE_DEPENDENCIES_PYLIST@
     ],
+    packages = ["@WHEEL_NAME@"],
+    package_data = {
+        "@WHEEL_NAME@": ["*"]
+    },
 
     cmdclass = {
         'bdist': bdist,
