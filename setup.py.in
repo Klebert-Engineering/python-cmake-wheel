@@ -64,7 +64,7 @@ setup(
     author = "@WHEEL_AUTHOR@",
     url = "@WHEEL_URL@",
 
-    ext_modules = [CMakeExtension("@WHEEL_NAME@")],
+    ext_modules = [CMakeExtension("@WHEEL_TARGET@")],
     keywords = "@WHEEL_NAME@",
     python_requires = "@WHEEL_PYTHON_REQUIRES@",
     install_requires = [
