@@ -39,7 +39,7 @@ function (add_wheel WHEEL_TARGET)
   # Parse arguments
   cmake_parse_arguments(WHEEL
     ""
-    "AUTHOR;URL;PYTHON_REQUIRES;VERSION;DESCRIPTION;README_PATH;LICENSE_PATH"
+    "NAME;AUTHOR;URL;PYTHON_REQUIRES;VERSION;DESCRIPTION;README_PATH;LICENSE_PATH"
     "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES" ${ARGN})
 
   to_python_list_string(WHEEL_MODULE_DEPENDENCIES WHEEL_MODULE_DEPENDENCIES_PYLIST)
@@ -65,8 +65,11 @@ function (add_wheel WHEEL_TARGET)
     set(WHEEL_LICENSE_PATH "${CMAKE_SOURCE_DIR}/LICENSE")
   endif()
 
+  if (NOT WHEEL_NAME)
+    set(WHEEL_NAME "${WHEEL_TARGET}")
+  endif()
+
   # Set up wheel build dir
-  set(WHEEL_NAME "${WHEEL_TARGET}")
   set(WHEEL_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/${WHEEL_NAME}.wheel")
   set(WHEEL_PACKAGE_DIR "${WHEEL_LIB_DIR}/${WHEEL_NAME}")
 
@@ -74,7 +77,7 @@ function (add_wheel WHEEL_TARGET)
   file(REMOVE_RECURSE "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_PACKAGE_DIR}")
-  file(WRITE "${WHEEL_PACKAGE_DIR}/__init__.py" "from .${WHEEL_NAME} import *")
+  file(WRITE "${WHEEL_PACKAGE_DIR}/__init__.py" "from .${WHEEL_TARGET} import *")
 
   # Only one wheel allowed per project.
   file(GLOB LOCAL_WHEEL_LIST "${CMAKE_CURRENT_BINARY_DIR}/*.wheel")
