@@ -15,6 +15,13 @@ if not os.path.exists('@WHEEL_DEPLOY_DIRECTORY@'):
     os.makedirs('@WHEEL_DEPLOY_DIRECTORY@', exist_ok=True)
 
 
+# This is necessary to inform distutils that we are building
+# a binary extension module, but we don't need to do anything.
+class CMakeExtension(Extension):
+    def __init__(self, name, **kwa):
+        Extension.__init__(self, name, sources=[], **kwa)
+
+
 class cmake_build_ext(build_ext):
     def run(self):
         self.build_temp = '@CMAKE_BINARY_DIR@'
@@ -57,6 +64,7 @@ setup(
     author = "@WHEEL_AUTHOR@",
     url = "@WHEEL_URL@",
 
+    ext_modules = [CMakeExtension("@WHEEL_NAME@")],
     keywords = "@WHEEL_NAME@",
     python_requires = "@WHEEL_PYTHON_REQUIRES@",
     install_requires = [
