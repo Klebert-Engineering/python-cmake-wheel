@@ -22,6 +22,8 @@ include(python-wheel)
 add_library(mylib ...)
 
 # Adapt using the following parameters:
+# NAME
+#  Wheel name. Defaults to extension module cmake target name.
 # VERSION
 #  Python package version.
 # AUTHOR
@@ -38,7 +40,8 @@ add_library(mylib ...)
 #  CMake targets which belong into the same wheel.
 # MODULE_DEPENDENCIES
 #  Python module dependencies (requirements.txt content)
-add_wheel(mylib
+add_wheel(mylib-python-bindings
+  NAME mylib
   VERSION "0.0.1"
   AUTHOR "Bob Ross"
   URL "http://python.org"
