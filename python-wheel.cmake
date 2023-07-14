@@ -129,8 +129,8 @@ function (add_wheel WHEEL_TARGET)
     COMMAND
       "${Python3_EXECUTABLE}" "-m" "pip" "wheel"
         "${CMAKE_CURRENT_BINARY_DIR}"
-        "-w" "${WHEEL_DEPLOY_DIRECTORY}"
-        "-f" "${WHEEL_DEPLOY_DIRECTORY}")
+        "--no-deps"
+        "-w" "${WHEEL_DEPLOY_DIRECTORY}")
 
   add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
 
