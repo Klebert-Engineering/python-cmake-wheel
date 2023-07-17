@@ -40,6 +40,10 @@ add_library(mylib ...)
 #  CMake targets which belong into the same wheel.
 # MODULE_DEPENDENCIES
 #  Python module dependencies (requirements.txt content)
+# SUBMODULES
+#  Any pybind11 submodules must be listed here to support imports like 
+#  "from mod.sub import x". A nested submodule must be listed like
+#  "sub.subsub". Parent submodules must be listed explicitly.
 add_wheel(mylib-python-bindings
   NAME mylib
   VERSION "0.0.1"

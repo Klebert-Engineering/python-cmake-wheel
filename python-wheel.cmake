@@ -40,7 +40,7 @@ function (add_wheel WHEEL_TARGET)
   cmake_parse_arguments(WHEEL
     ""
     "NAME;AUTHOR;URL;PYTHON_REQUIRES;VERSION;DESCRIPTION;README_PATH;LICENSE_PATH"
-    "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES" ${ARGN})
+    "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES;SUBMODULES" ${ARGN})
 
   to_python_list_string(WHEEL_MODULE_DEPENDENCIES WHEEL_MODULE_DEPENDENCIES_PYLIST)
 
@@ -78,6 +78,14 @@ function (add_wheel WHEEL_TARGET)
   file(MAKE_DIRECTORY "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_PACKAGE_DIR}")
   file(WRITE "${WHEEL_PACKAGE_DIR}/__init__.py" "from .${WHEEL_TARGET} import *")
+  foreach(SUBMODULE IN LISTS WHEEL_SUBMODULES)
+    string(REPLACE "." "/" SUBMODULE_DIR ${SUBMODULE})
+    file(MAKE_DIRECTORY "${WHEEL_PACKAGE_DIR}/${SUBMODULE_DIR}")
+    # Create repeating dots by removing all non-dot characters from the submodule string
+    string(REGEX REPLACE "[^\\.]" "" DOTS ${SUBMODULE})
+    # Correctly adjust the import statement considering depth
+    file(WRITE "${WHEEL_PACKAGE_DIR}/${SUBMODULE_DIR}/__init__.py" "from .${DOTS}.${WHEEL_TARGET}.${SUBMODULE} import *")
+  endforeach()
 
   # Only one wheel allowed per project.
   file(GLOB LOCAL_WHEEL_LIST "${CMAKE_CURRENT_BINARY_DIR}/*.wheel")
