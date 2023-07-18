@@ -60,6 +60,9 @@ add_wheel(mylib-python-bindings
 
 The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.
 
+**Note: On macOS, when the `MACOSX_DEPLOYMENT_TARGET` env is set, the wheel will be
+tagged with the indicated deployment target version.
+
 ## Adding tests
 
 The `python-wheel.cmake` include also provides a function that lets you easily add a cmake test for your wheel: `add_wheel_test(...)`.

@@ -2,6 +2,7 @@ include(python-wheel-globals)
 
 set(PY_WHEEL_SETUP_FILE "${CMAKE_CURRENT_LIST_DIR}/setup.py.in" CACHE INTERNAL "")
 set(TEST_WHEEL_BASH "${CMAKE_CURRENT_LIST_DIR}/test-wheel.bash" CACHE INTERNAL "")
+set(PY_CHANGE_TAG_FILE "${CMAKE_CURRENT_LIST_DIR}/change-wheel-tag-macos.py" CACHE INTERNAL "")
 
 # Target for building all added wheels
 add_custom_target(wheel ALL)
@@ -133,12 +134,19 @@ function (add_wheel WHEEL_TARGET)
   set(SETUP_FILE "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
   configure_file("${PY_WHEEL_SETUP_FILE}" "${SETUP_FILE}")
 
+  if(APPLE)
+    set(EXTRA_ARGS COMMAND "${Python3_EXECUTABLE}" "${PY_CHANGE_TAG_FILE}" "${WHEEL_DEPLOY_DIRECTORY}" "${WHEEL_NAME}")
+  else()
+    set(EXTRA_ARGS "")
+  endif()
+
   add_custom_target(${WHEEL_TARGET}-setup-py
     COMMAND
       "${Python3_EXECUTABLE}" "-m" "pip" "wheel"
         "${CMAKE_CURRENT_BINARY_DIR}"
         "--no-deps"
-        "-w" "${WHEEL_DEPLOY_DIRECTORY}")
+        "-w" "${WHEEL_DEPLOY_DIRECTORY}"
+      ${EXTRA_ARGS})
 
   add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
 
