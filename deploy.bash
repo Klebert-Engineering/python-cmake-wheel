@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 image_name="manylinux-cpp17-py"
-version="2023.1"
+version="2023.2"
 push=""
 latest=""
 python_versions=(3.8.10 3.9.13 3.10.9 3.11.1)
