@@ -12,15 +12,15 @@ unzip "$in_whl"
 echo "Contents of directory after unzipping wheel:"
 ls -l
 
-DYLD_FALLBACK_LIBRARY_PATH=/usr/local/lib delocate-path -L "$dylib_dirname" .
+# Set the DYLD_FALLBACK_LIBRARY_PATH to include /usr/local/lib
+export DYLD_FALLBACK_LIBRARY_PATH="/usr/local/lib"
 
-# Print the contents of the current directory after running delocate-path
-echo "Contents of directory after running delocate-path:"
-ls -l
+# Add all subdirectories in the current directory to DYLD_FALLBACK_LIBRARY_PATH
+for dir in $(find . -type d); do
+    export DYLD_FALLBACK_LIBRARY_PATH="${DYLD_FALLBACK_LIBRARY_PATH}:$(pwd)/$dir"
+done
 
-# Print the contents of /usr/local/lib
-echo "Contents of /usr/local/lib:"
-ls -l /usr/local/lib
+delocate-path -L "$dylib_dirname.dylibs" .
 
 wheel=$(basename "$in_whl")
 zip -r "$wheel" ./*
