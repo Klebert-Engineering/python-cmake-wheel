@@ -2,6 +2,7 @@ include(python-wheel-globals)
 
 set(PY_WHEEL_SETUP_FILE "${CMAKE_CURRENT_LIST_DIR}/setup.py.in" CACHE INTERNAL "")
 set(TEST_WHEEL_BASH "${CMAKE_CURRENT_LIST_DIR}/test-wheel.bash" CACHE INTERNAL "")
+set(PY_CHANGE_TAG_FILE "${CMAKE_CURRENT_LIST_DIR}/change-wheel-tag-macos.py" CACHE INTERNAL "")
 
 # Target for building all added wheels
 add_custom_target(wheel ALL)
@@ -40,7 +41,7 @@ function (add_wheel WHEEL_TARGET)
   cmake_parse_arguments(WHEEL
     ""
     "NAME;AUTHOR;URL;PYTHON_REQUIRES;VERSION;DESCRIPTION;README_PATH;LICENSE_PATH"
-    "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES" ${ARGN})
+    "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES;SUBMODULES" ${ARGN})
 
   to_python_list_string(WHEEL_MODULE_DEPENDENCIES WHEEL_MODULE_DEPENDENCIES_PYLIST)
 
@@ -78,6 +79,14 @@ function (add_wheel WHEEL_TARGET)
   file(MAKE_DIRECTORY "${WHEEL_LIB_DIR}")
   file(MAKE_DIRECTORY "${WHEEL_PACKAGE_DIR}")
   file(WRITE "${WHEEL_PACKAGE_DIR}/__init__.py" "from .${WHEEL_TARGET} import *")
+  foreach(SUBMODULE IN LISTS WHEEL_SUBMODULES)
+    string(REPLACE "." "/" SUBMODULE_DIR ${SUBMODULE})
+    file(MAKE_DIRECTORY "${WHEEL_PACKAGE_DIR}/${SUBMODULE_DIR}")
+    # Create repeating dots by removing all non-dot characters from the submodule string
+    string(REGEX REPLACE "[^\\.]" "" DOTS ${SUBMODULE})
+    # Correctly adjust the import statement considering depth
+    file(WRITE "${WHEEL_PACKAGE_DIR}/${SUBMODULE_DIR}/__init__.py" "from .${DOTS}.${WHEEL_TARGET}.${SUBMODULE} import *")
+  endforeach()
 
   # Only one wheel allowed per project.
   file(GLOB LOCAL_WHEEL_LIST "${CMAKE_CURRENT_BINARY_DIR}/*.wheel")
@@ -125,12 +134,19 @@ function (add_wheel WHEEL_TARGET)
   set(SETUP_FILE "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
   configure_file("${PY_WHEEL_SETUP_FILE}" "${SETUP_FILE}")
 
+  if(APPLE)
+    set(EXTRA_ARGS COMMAND "${Python3_EXECUTABLE}" "${PY_CHANGE_TAG_FILE}" "${WHEEL_DEPLOY_DIRECTORY}" "${WHEEL_NAME}")
+  else()
+    set(EXTRA_ARGS "")
+  endif()
+
   add_custom_target(${WHEEL_TARGET}-setup-py
     COMMAND
       "${Python3_EXECUTABLE}" "-m" "pip" "wheel"
         "${CMAKE_CURRENT_BINARY_DIR}"
+        "--no-deps"
         "-w" "${WHEEL_DEPLOY_DIRECTORY}"
-        "-f" "${WHEEL_DEPLOY_DIRECTORY}")
+      ${EXTRA_ARGS})
 
   add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
 

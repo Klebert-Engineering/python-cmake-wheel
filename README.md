@@ -40,6 +40,10 @@ add_library(mylib ...)
 #  CMake targets which belong into the same wheel.
 # MODULE_DEPENDENCIES
 #  Python module dependencies (requirements.txt content)
+# SUBMODULES
+#  Any pybind11 submodules must be listed here to support imports like 
+#  "from mod.sub import x". A nested submodule must be listed like
+#  "sub.subsub". Parent submodules must be listed explicitly.
 add_wheel(mylib-python-bindings
   NAME mylib
   VERSION "0.0.1"
@@ -55,6 +59,9 @@ add_wheel(mylib-python-bindings
 ```
 
 The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.
+
+**Note: On macOS, when the `MACOSX_DEPLOYMENT_TARGET` env is set, the wheel will be
+tagged with the indicated deployment target version.
 
 ## Adding tests
 
