@@ -28,7 +28,6 @@ class cmake_build_ext(build_ext):
         self.build_lib = '@WHEEL_PACKAGE_DIR@'
         if platform.system() == 'Linux':
             self.fix_linux_loader_paths()
-        self.copy_extensions_to_source()
 
     def fix_linux_loader_paths(self):
         for f in os.listdir('@WHEEL_PACKAGE_DIR@'):
