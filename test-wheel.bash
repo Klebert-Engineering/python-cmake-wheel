@@ -16,22 +16,18 @@ trap '
   failed_pids=()
   for pid in $(jobs -p); do
     if kill -0 $pid >/dev/null 2>&1; then
-      echo "Process $pid is still running."
+      # Background process is still running - good.
+      kill $pid
     else
       exit_status=$?
       if [[ $exit_status -eq 0 ]]; then
-        echo "Process $pid exited with zero status."
+        echo "Background task $pid already exited with zero status."
       else
-        echo "Process $pid exited with nonzero status ($exit_status)."
+        echo "Background task $pid exited with nonzero status ($exit_status)."
         failed_pids+=("$pid")
       fi
     fi
   done
-  
-  if [[ -n $(jobs -p) ]]; then
-    echo "→ Killing $(jobs -p)"
-    kill $(jobs -p)
-  fi
 
   if [[ "$cleanup" == "true" ]]; then
     echo "→ Removing $venv"; rm -rf "$venv"
@@ -52,14 +48,15 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -b|--background)
-      echo "→ Launching Background Task $2 ..."
+      echo "→ Launching background task: $2"
       $2 &
+      echo "... started with PID: $!"
       sleep 5
       shift
       shift
       ;;
     -f|--foreground)
-      echo "→ Starting $2 ..."
+      echo "→ Starting foreground task: $2"
       $2
       shift
       shift
