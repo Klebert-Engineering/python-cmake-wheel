@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 my_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 . "$my_dir/python.bash"
 
@@ -69,5 +71,3 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-exit 0
