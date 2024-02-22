@@ -28,6 +28,8 @@ add_library(mylib ...)
 #  Python package version.
 # AUTHOR
 #  Package author name.
+# EMAIL
+#  Package author email address.
 # URL
 #  Package website.
 # PYTHON_REQUIRES
@@ -40,6 +42,8 @@ add_library(mylib ...)
 #  CMake targets which belong into the same wheel.
 # MODULE_DEPENDENCIES
 #  Python module dependencies (requirements.txt content)
+# SCRIPTS
+#  Additional scripts that should be part of the wheel.
 # SUBMODULES
 #  Any pybind11 submodules must be listed here to support imports like 
 #  "from mod.sub import x". A nested submodule must be listed like
@@ -48,6 +52,7 @@ add_wheel(mylib-python-bindings
   NAME mylib
   VERSION "0.0.1"
   AUTHOR "Bob Ross"
+  EMAIL "email@address.com"
   URL "http://python.org"
   PYTHON_REQUIRES ">=3.8"
   DESCRIPTION "Binary Python wheel."
@@ -55,7 +60,11 @@ add_wheel(mylib-python-bindings
   TARGET_DEPENDENCIES
     dependency-lib
   MODULE_DEPENDENCIES
-    pypi-dependency1 pypi-dependency2)
+    pypi-dependency1 pypi-dependency2
+  SCRIPTS
+    /path/to/python/script1
+    /path/to/python/script2
+)
 ```
 
 The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.

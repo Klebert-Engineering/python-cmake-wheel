@@ -40,10 +40,11 @@ function (add_wheel WHEEL_TARGET)
   # Parse arguments
   cmake_parse_arguments(WHEEL
     ""
-    "NAME;AUTHOR;URL;PYTHON_REQUIRES;VERSION;DESCRIPTION;README_PATH;LICENSE_PATH"
-    "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES;SUBMODULES" ${ARGN})
+    "NAME;AUTHOR;URL;EMAIL;PYTHON_REQUIRES;VERSION;DESCRIPTION;README_PATH;LICENSE_PATH"
+    "TARGET_DEPENDENCIES;MODULE_DEPENDENCIES;DEPLOY_FILES;SUBMODULES;SCRIPTS" ${ARGN})
 
   to_python_list_string(WHEEL_MODULE_DEPENDENCIES WHEEL_MODULE_DEPENDENCIES_PYLIST)
+  to_python_list_string(WHEEL_SCRIPTS WHEEL_SCRIPTS_PYLIST)
 
   if (NOT WHEEL_VERSION)
     message(FATAL_ERROR "Missing wheel version.")
@@ -55,6 +56,10 @@ function (add_wheel WHEEL_TARGET)
 
   if (NOT WHEEL_URL)
     set(WHEEL_URL "")
+  endif()
+
+  if (NOT WHEEL_EMAIL)
+    set(WHEEL_EMAIL "")
   endif()
 
   if (NOT WHEEL_PYTHON_REQUIRES)
@@ -127,6 +132,15 @@ function (add_wheel WHEEL_TARGET)
       add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "Copying file from ${file} to ${WHEEL_PACKAGE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${file}" "${WHEEL_PACKAGE_DIR}/")
+    endforeach()
+  endif()
+
+  if (WHEEL_SCRIPTS)
+    foreach (file IN LISTS WHEEL_SCRIPTS)
+      add_custom_command(TARGET ${WHEEL_TARGET}-copy-files
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying script from ${file} to ${WHEEL_PACKAGE_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy "${file}" "${WHEEL_PACKAGE_DIR}/")
     endforeach()
   endif()

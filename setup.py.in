@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, platform
+import os, sys, platform, stat
 import zipfile
 import subprocess
 import re
@@ -56,11 +56,12 @@ class install_lib(_install_lib):
         self.build_dir = '@WHEEL_LIB_DIR@'
 
 
-setup(
+kwargs = dict(
     name = "@WHEEL_NAME@",
     version = "@WHEEL_VERSION@",
     description = "@WHEEL_DESCRIPTION@",
     author = "@WHEEL_AUTHOR@",
+    author_email='@WHEEL_EMAIL@',
     url = "@WHEEL_URL@",
 
     ext_modules = [CMakeExtension("@WHEEL_TARGET@")],
@@ -74,6 +75,9 @@ setup(
     package_data = {
         "@WHEEL_NAME@": ["*"]
     },
+    scripts = [
+        @WHEEL_SCRIPTS_PYLIST@
+    ],
 
     cmdclass = {
         'bdist': bdist,
@@ -82,3 +86,9 @@ setup(
         'build_ext': cmake_build_ext,
     },
 )
+
+for script in kwargs['scripts']:
+    st = os.stat(script)
+    os.chmod(script, st.st_mode | stat.S_IEXEC)
+
+setup(**kwargs)
