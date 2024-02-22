@@ -58,8 +58,8 @@ function (add_wheel WHEEL_TARGET)
     set(WHEEL_URL "")
   endif()
 
-  if (NOT WHEEL_URL)
-    set(WHEEL_URL "")
+  if (NOT WHEEL_EMAIL)
+    set(WHEEL_EMAIL "")
   endif()
 
   if (NOT WHEEL_PYTHON_REQUIRES)
