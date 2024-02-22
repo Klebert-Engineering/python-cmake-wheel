@@ -48,6 +48,7 @@ add_wheel(mylib-python-bindings
   NAME mylib
   VERSION "0.0.1"
   AUTHOR "Bob Ross"
+  EMAIL "email@address.com"
   URL "http://python.org"
   PYTHON_REQUIRES ">=3.8"
   DESCRIPTION "Binary Python wheel."
@@ -55,7 +56,11 @@ add_wheel(mylib-python-bindings
   TARGET_DEPENDENCIES
     dependency-lib
   MODULE_DEPENDENCIES
-    pypi-dependency1 pypi-dependency2)
+    pypi-dependency1 pypi-dependency2
+  SCRIPTS
+    /path/to/python/script1
+    /path/to/python/script2
+)
 ```
 
 The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.
