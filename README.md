@@ -28,6 +28,8 @@ add_library(mylib ...)
 #  Python package version.
 # AUTHOR
 #  Package author name.
+# EMAIL
+#  Package author email address.
 # URL
 #  Package website.
 # PYTHON_REQUIRES
@@ -40,6 +42,8 @@ add_library(mylib ...)
 #  CMake targets which belong into the same wheel.
 # MODULE_DEPENDENCIES
 #  Python module dependencies (requirements.txt content)
+# SCRIPTS
+#  Additional scripts that should be part of the wheel.
 # SUBMODULES
 #  Any pybind11 submodules must be listed here to support imports like 
 #  "from mod.sub import x". A nested submodule must be listed like
