@@ -44,6 +44,10 @@ add_library(mylib ...)
 #  Python module dependencies (requirements.txt content)
 # SCRIPTS
 #  Additional scripts that should be part of the wheel.
+# PYTHON_PACKAGE_DIRS
+#  Paths to directories of additional Python packages, which
+#  are bundled with the wheel. This could for example contain
+#  pybind11 binding module wrappers.
 # SUBMODULES
 #  Any pybind11 submodules must be listed here to support imports like 
 #  "from mod.sub import x". A nested submodule must be listed like
@@ -64,6 +68,9 @@ add_wheel(mylib-python-bindings
   SCRIPTS
     /path/to/python/script1
     /path/to/python/script2
+  PYTHON_PACKAGE_DIRS
+    /path/to/python/project1
+    /path/to/python/project2
 )
 ```
 

@@ -71,7 +71,7 @@ kwargs = dict(
         @WHEEL_MODULE_DEPENDENCIES_PYLIST@
     ],
     package_dir = {"": "@WHEEL_NAME@.wheel"},
-    packages = ["@WHEEL_NAME@"],
+    packages = [@WHEEL_PYTHON_PACKAGE_DIRS_PYLIST@],
     package_data = {
         "@WHEEL_NAME@": ["*"]
     },
