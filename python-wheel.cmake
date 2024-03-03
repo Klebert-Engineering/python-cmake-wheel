@@ -15,6 +15,31 @@ macro (to_python_list_string LIST OUT)
   list(JOIN ${LIST} ", " ${OUT})
 endmacro()
 
+# Get CMake target file path by using:
+#   - LOCATION for imported targets
+#   - TARGET_FILE for targets which are build by the current project
+#
+# See: https://cmake.org/cmake/help/v3.29/prop_tgt/LOCATION.html#prop_tgt:LOCATION
+function (_get_target_location result_var TARGET)
+  set(type ${CMAKE_BUILD_TYPE})
+  string(TOUPPER ${type} type)
+
+  set(conan_libs     ${${TARGET}_LIBS_${type}})
+  set(conan_lib_dirs ${${TARGET}_LIB_DIRS_${type}})
+
+  if (NOT ${conan_libs} STREQUAL "" AND
+      NOT ${conan_lib_dirs} STREQUAL "")
+    set(location "${${TARGET}_LIBS_DIRS_${type}}/${${TARGET}_LIBS_${TYPE}}")
+  message(FATAL_ERROR ">>> location: ${location}")
+    message(FATAL_ERROR "CHECK:\n"
+      "type: ${type}\n libs: ${TARGET}_LIBS_${type}=${conan_libs} \n dirs: ${TARGET}_LIB_DIRS_${type}=${conan_lib_dirs} \n orig: ${simfil_LIB_DIRS_RELEASE}")
+    set(${result_var} "${location}.${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  else()
+    set(${result_var} "$<TARGET_FILE:${TARGET}>")
+  endif()
+  return(PROPAGATE ${result_var})
+endfunction()
+
 # Copy SOURCE's target file, or if SOURCE is an interface-lib:
 # all linked target files to the destination DEST. Add the
 # command to the target TARGET.
@@ -24,12 +49,14 @@ function (_copy_target TARGET SOURCE DEST)
   if (source_type STREQUAL "INTERFACE_LIBRARY")
     get_target_property(source_libs ${SOURCE} INTERFACE_LINK_LIBRARIES)
     foreach (source_lib IN LISTS source_libs)
+      _get_target_location(source_lib_location ${source_lib})
       add_custom_command(TARGET ${TARGET}
-        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${source_lib}>" "${DEST}")
+        COMMAND ${CMAKE_COMMAND} -E copy "${source_lib_location}" "${DEST}")
     endforeach()
   else()
+    _get_target_location(source_location ${SOURCE})
     add_custom_command(TARGET ${TARGET}
-      COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${SOURCE}>" "${DEST}")
+      COMMAND ${CMAKE_COMMAND} -E copy "${source_location}" "${DEST}")
   endif()
 endfunction()
 
