@@ -180,6 +180,11 @@ function (add_wheel WHEEL_TARGET)
   add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
 
   add_dependencies(wheel ${WHEEL_TARGET}-setup-py)
+
+  set_target_properties(${WHEEL_TARGET} PROPERTIES
+    BUILD_RPATH "\$ORIGIN;" # Override hardcoded RPATH
+    INSTALL_RPATH "\$ORIGIN;"
+  )
 endfunction()
 
 function (add_wheel_test TEST_NAME)
