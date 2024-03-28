@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, platform, stat
+import os, sys, stat
 import zipfile
 import subprocess
 import re
@@ -26,16 +26,6 @@ class cmake_build_ext(build_ext):
     def run(self):
         self.build_temp = '@CMAKE_BINARY_DIR@'
         self.build_lib = '@WHEEL_PACKAGE_DIR@'
-        if platform.system() == 'Linux':
-            self.fix_linux_loader_paths()
-
-    def fix_linux_loader_paths(self):
-        for f in os.listdir('@WHEEL_PACKAGE_DIR@'):
-            print(f"cmake_build_ext: Fixing {f}")
-            file_path = os.path.join('@WHEEL_PACKAGE_DIR@', f)
-            if f.endswith('.so'):
-                self.spawn(['patchelf', '--set-rpath', '$ORIGIN', file_path])
-
 
 class bdist(_bdist):
     def finalize_options(self):
