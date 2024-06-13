@@ -41,6 +41,7 @@ for pyver_long in "${python_versions[@]}"; do
 
     sed -e "s/\${pyver_long}/$pyver_long/g" \
         -e "s/\${pyver_short}/$pyver_short/g" \
+        -e "s/\${architecture}/$architecture/g" \
         Dockerfile.template > $dockerfile
 
     image_name_full="ghcr.io/klebert-engineering/$image_name$pyver_short_$architecture"
