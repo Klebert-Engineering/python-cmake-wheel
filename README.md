@@ -107,3 +107,106 @@ add_wheel_test(mylib-test
     -f "pytest test.py"
 )
 ```
+
+## CI Utilities
+
+This repository also provides several utilities to facilitate additional wheel deployment steps that are needed on macOS and Linux.
+
+### Linux
+
+For CI jobs, this repo provides the following docker images:
+
+* `manylinux-cpp17-py3.9-x86_64`
+* `manylinux-cpp17-py3.10-x86_64`
+* `manylinux-cpp17-py3.11-x86_64`
+* `manylinux-cpp17-py3.12-x86_64`
+
+This images are based on GLIBC 2.28, so e.g. the minimum Ubuntu version
+for wheels from your CI will be 21.04.
+
+Note: `aarch64` images are not yet deployed. Let us know if you need them!
+
+You may use a Github Actions Snippet like this to build your wheels:
+
+```yaml
+jobs:
+  build-manylinux:
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    runs-on: ubuntu-latest
+    container: ghcr.io/klebert-engineering/manylinux-cpp17-py${{ matrix.python-version }}-x86_64:2024.1
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Configure and Build
+        run: |
+          mkdir build && cd build
+          cmake ..
+          cmake --build .
+          # Important step: Audit the wheels!
+          mv bin/wheel bin/wheel-auditme
+          auditwheel repair bin/wheel-auditme/mapget*.whl -w bin/wheel
+      - name: Deploy
+        uses: actions/upload-artifact@v3
+        with:
+          name: mapget-py${{ matrix.python-version }}-ubuntu-latest
+          path: build/**/bin/wheel/*.whl
+      - name: Test
+        run: |
+          cd build
+          ctest --verbose --no-tests=error
+```
+
+### macOS
+
+For macOS, this repo provides the `repair-wheel-macos.bash` script, which controls
+invocations of the `delocate-path` tool which bundles dependencies into your wheel.
+
+Use it in your Github action like this:
+
+```yaml
+jobs:
+  build-macos:
+    runs-on: macos-13
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Build (macOS)
+        if: matrix.os == 'macos-13'
+        run: |
+          python -m pip install delocate
+          export MACOSX_DEPLOYMENT_TARGET=10.15
+          mkdir build && cd build
+          cmake ..
+          cmake --build .
+          # Important step: Audit the wheels!
+          mv bin/wheel bin/wheel-auditme  # Same as on Linux
+          ./_deps/python-cmake-wheel-src/repair-wheel-macos.bash \
+                "$(pwd)"/bin/wheel-auditme/mapget*.whl \
+                "$(pwd)"/bin/wheel mapget
+      - name: Deploy
+        uses: actions/upload-artifact@v3
+        with:
+          name: mapget-py${{ matrix.python-version }}-macos-13
+          path: build/**/bin/wheel/*.whl
+      - name: Test
+        run: |
+          cd build
+          ctest --verbose --no-tests=error
+```
+
+### Windows
+
+No special utilties/audit steps are needed when building on Windows.
