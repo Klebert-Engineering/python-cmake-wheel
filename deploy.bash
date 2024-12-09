@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 image_name="manylinux-cpp17-py"
-version="2024.1"
+version="2024.2"
 push=""
 latest=""
-python_versions=(3.8.10 3.9.13 3.10.9 3.11.1 3.12.4)
+python_versions=(3.9.13 3.10.9 3.11.1 3.12.4)
 architecture=x86_64
 
 while [[ $# -gt 0 ]]; do
@@ -44,7 +44,7 @@ for pyver_long in "${python_versions[@]}"; do
         -e "s/\${architecture}/$architecture/g" \
         Dockerfile.template > $dockerfile
 
-    image_name_full="ghcr.io/klebert-engineering/$image_name$pyver_short_$architecture"
+    image_name_full="ghcr.io/klebert-engineering/$image_name$pyver_short-$architecture"
     docker build -t "$image_name_full:$version" -f $dockerfile .
 
     if [[ -n "$latest" ]]; then
