@@ -1,6 +1,7 @@
-FROM quay.io/pypa/manylinux2014_${architecture}
+FROM quay.io/pypa/manylinux_2_28_${architecture}
 
 RUN yum update -y && yum install -y \
+    gcc-c++ \
     ant \
     zlib-devel \
     perl-core \
@@ -9,25 +10,17 @@ RUN yum update -y && yum install -y \
     bzip2-devel \
     libffi-devel \
     xz-devel \
-    openssl-devel
-
-# Install OpenSSL 1.1
-ADD https://www.openssl.org/source/openssl-1.1.1t.tar.gz /usr/local/src
-RUN cd /usr/local/src && \
-    tar -xzvf openssl-1.1.1t.tar.gz && \
-    cd openssl-1.1.1t && \
-    ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
-    make install
-ENV OPENSSL_ROOT_DIR=/usr/local/ssl
-ENV LD_LIBRARY_PATH="/usr/local/ssl/lib:$LD_LIBRARY_PATH"
+    openssl-devel \
+    make \
+    tar
 
 # Install Python
 ADD https://www.python.org/ftp/python/${pyver_long}/Python-${pyver_long}.tgz /usr/local/src
 RUN cd /usr/local/src && \
     tar -xzvf Python-${pyver_long}.tgz && \
     cd Python-${pyver_long} && \
-    ./configure --enable-optimizations --enable-shared --with-openssl=$OPENSSL_ROOT_DIR --with-openssl-rpath=auto && \
-    make install
-RUN ln -s /usr/local/src/Python-${pyver_long}/libpython${pyver_short}.so.1.0 /lib64/libpython${pyver_short}.so.1.0
+    ./configure --enable-shared && \
+    make -j$(nproc) install
+RUN ln -sf /usr/local/src/Python-${pyver_long}/libpython${pyver_short}.so.1.0 /lib64/libpython${pyver_short}.so.1.0
 RUN pip${pyver_short} install wheel
 RUN pip${pyver_short} install -U pip

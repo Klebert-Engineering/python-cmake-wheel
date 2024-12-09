@@ -35,7 +35,7 @@ for pyver_long in "${python_versions[@]}"; do
 
     pyver_short=$(echo "$pyver_long" | sed "s/\\.[0-9]\+\$//")
 
-    echo "Building manylinux Docker image for Python $pyver_short ($pyver_long)..."
+    echo "Building $architecture manylinux Docker image for Python $pyver_short ($pyver_long)..."
 
     dockerfile="Dockerfile-$pyver_long-$architecture"
 
