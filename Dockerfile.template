@@ -11,6 +11,7 @@ RUN yum update -y && yum install -y \
     libffi-devel \
     xz-devel \
     openssl-devel \
+    sqlite-devel \
     make \
     tar
 
