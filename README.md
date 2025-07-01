@@ -33,7 +33,7 @@ add_library(mylib ...)
 # URL
 #  Package website.
 # PYTHON_REQUIRES
-#  Python version requirement. Default: >=3.8
+#  Python version requirement. Default: >=3.9
 # DESCRIPTION
 #  Python package short description.
 # DEPLOY_FILES
@@ -58,7 +58,7 @@ add_wheel(mylib-python-bindings
   AUTHOR "Bob Ross"
   EMAIL "email@address.com"
   URL "http://python.org"
-  PYTHON_REQUIRES ">=3.8"
+  PYTHON_REQUIRES ">=3.9"
   DESCRIPTION "Binary Python wheel."
   DEPLOY_FILES "MY_LICENSE.txt"
   TARGET_DEPENDENCIES
@@ -120,6 +120,7 @@ For CI jobs, this repo provides the following docker images:
 * `manylinux-cpp17-py3.10-x86_64`
 * `manylinux-cpp17-py3.11-x86_64`
 * `manylinux-cpp17-py3.12-x86_64`
+* `manylinux-cpp17-py3.13-x86_64`
 
 This images are based on GLIBC 2.28, so e.g. the minimum Ubuntu version
 for wheels from your CI will be 21.04.
@@ -133,9 +134,9 @@ jobs:
   build-manylinux:
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
-    container: ghcr.io/klebert-engineering/manylinux-cpp17-py${{ matrix.python-version }}-x86_64:2024.1
+    container: ghcr.io/klebert-engineering/manylinux-cpp17-py${{ matrix.python-version }}-x86_64:latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -172,7 +173,7 @@ jobs:
     runs-on: macos-13
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     env:
       SCCACHE_GHA_ENABLED: "true"
     steps:

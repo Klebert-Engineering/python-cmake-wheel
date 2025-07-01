@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 image_name="manylinux-cpp17-py"
-version="2024.2"
+version="2025.1"
 push=""
 latest=""
-python_versions=(3.9.13 3.10.9 3.11.1 3.12.4)
+python_versions=(3.9.13 3.10.9 3.11.1 3.12.4 3.13.1)
 architecture=x86_64
 
 while [[ $# -gt 0 ]]; do

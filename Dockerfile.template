@@ -11,8 +11,22 @@ RUN yum update -y && yum install -y \
     libffi-devel \
     xz-devel \
     openssl-devel \
+    sqlite-devel \
     make \
     tar
+
+# Remove CMake 4.x that comes with manylinux_2_28 base image
+# We need CMake 3.x because CMake 4.0 dropped support for older CMake syntax
+# that some of our dependencies still require
+RUN rm -f /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack
+
+# Install CMake 3.31.8 (latest 3.x version)
+ADD https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-x86_64.tar.gz /tmp/
+RUN cd /tmp && \
+    tar -xzf cmake-3.31.8-linux-x86_64.tar.gz && \
+    cp -r cmake-3.31.8-linux-x86_64/bin/* /usr/local/bin/ && \
+    cp -r cmake-3.31.8-linux-x86_64/share/* /usr/local/share/ && \
+    rm -rf /tmp/cmake*
 
 # Install Python
 ADD https://www.python.org/ftp/python/${pyver_long}/Python-${pyver_long}.tgz /usr/local/src

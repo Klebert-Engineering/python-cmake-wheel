@@ -62,7 +62,7 @@ function (add_wheel WHEEL_TARGET)
   endif()
 
   if (NOT WHEEL_PYTHON_REQUIRES)
-    set(WHEEL_PYTHON_REQUIRES ">=3.8")
+    set(WHEEL_PYTHON_REQUIRES ">=3.9")
   endif()
 
   if (NOT WHEEL_LICENSE_PATH)
