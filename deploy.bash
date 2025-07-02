@@ -30,6 +30,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Validate architecture
+if [[ "$architecture" != "x86_64" && "$architecture" != "aarch64" ]]; then
+  echo "Error: Unsupported architecture '$architecture'. Supported architectures are: x86_64, aarch64"
+  exit 1
+fi
+
 
 for pyver_long in "${python_versions[@]}"; do
 

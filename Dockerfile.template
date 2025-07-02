@@ -21,11 +21,19 @@ RUN yum update -y && yum install -y \
 RUN rm -f /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack
 
 # Install CMake 3.31.8 (latest 3.x version)
-ADD https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-x86_64.tar.gz /tmp/
-RUN cd /tmp && \
-    tar -xzf cmake-3.31.8-linux-x86_64.tar.gz && \
-    cp -r cmake-3.31.8-linux-x86_64/bin/* /usr/local/bin/ && \
-    cp -r cmake-3.31.8-linux-x86_64/share/* /usr/local/share/ && \
+# Map Docker architecture to CMake architecture naming
+RUN if [ "${architecture}" = "x86_64" ]; then \
+        CMAKE_ARCH="x86_64"; \
+    elif [ "${architecture}" = "aarch64" ]; then \
+        CMAKE_ARCH="aarch64"; \
+    else \
+        echo "Unsupported architecture: ${architecture}"; exit 1; \
+    fi && \
+    curl -L https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-${CMAKE_ARCH}.tar.gz -o /tmp/cmake.tar.gz && \
+    cd /tmp && \
+    tar -xzf cmake.tar.gz && \
+    cp -r cmake-3.31.8-linux-${CMAKE_ARCH}/bin/* /usr/local/bin/ && \
+    cp -r cmake-3.31.8-linux-${CMAKE_ARCH}/share/* /usr/local/share/ && \
     rm -rf /tmp/cmake*
 
 # Install Python
