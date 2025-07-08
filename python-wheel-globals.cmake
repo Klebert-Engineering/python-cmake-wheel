@@ -1,4 +1,4 @@
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 
 # Some RPATH setup for macOS
 if (APPLE)
