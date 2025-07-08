@@ -36,13 +36,17 @@ RUN if [ "${architecture}" = "x86_64" ]; then \
     cp -r cmake-3.31.8-linux-${CMAKE_ARCH}/share/* /usr/local/share/ && \
     rm -rf /tmp/cmake*
 
-# Install Python
-ADD https://www.python.org/ftp/python/${pyver_long}/Python-${pyver_long}.tgz /usr/local/src
-RUN cd /usr/local/src && \
-    tar -xzvf Python-${pyver_long}.tgz && \
-    cd Python-${pyver_long} && \
-    ./configure --enable-shared && \
-    make -j$(nproc) install
-RUN ln -sf /usr/local/src/Python-${pyver_long}/libpython${pyver_short}.so.1.0 /lib64/libpython${pyver_short}.so.1.0
-RUN pip${pyver_short} install wheel
-RUN pip${pyver_short} install -U pip
+# Use pre-installed Python from manylinux image
+# The manylinux images already have Python versions in /opt/python/
+# Create symlinks to make the Python version available system-wide
+RUN if [ -d /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.') ]; then \
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/python /usr/local/bin/python${pyver_short} && \
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/pip /usr/local/bin/pip${pyver_short} && \
+        echo "Using pre-installed Python ${pyver_short}"; \
+    else \
+        echo "Python ${pyver_short} not found in /opt/python/"; \
+        exit 1; \
+    fi
+
+# Ensure wheel is installed (should already be present in manylinux images)
+RUN pip${pyver_short} install --upgrade pip wheel
