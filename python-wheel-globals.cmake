@@ -1,4 +1,4 @@
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 
 # Some RPATH setup for macOS
 if (APPLE)
@@ -31,9 +31,27 @@ elseif (APPLE)
         "-c" "import platform; print('_'.join(platform.mac_ver()[0].split('.')[:2]))"
     OUTPUT_VARIABLE MACOS_VER
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(PY_WHEEL_PLATFORM "macosx_${MACOS_VER}_x86_64")
+  execute_process(
+    COMMAND
+      "${Python3_EXECUTABLE}"
+        "-c" "import platform; print(platform.machine())"
+    OUTPUT_VARIABLE MACHINE_ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(MACHINE_ARCH STREQUAL "arm64")
+    set(PY_WHEEL_PLATFORM "macosx_${MACOS_VER}_arm64")
+  else()
+    set(PY_WHEEL_PLATFORM "macosx_${MACOS_VER}_x86_64")
+  endif()
 else()
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  execute_process(
+    COMMAND
+      "${Python3_EXECUTABLE}"
+        "-c" "import platform; print(platform.machine())"
+    OUTPUT_VARIABLE MACHINE_ARCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(MACHINE_ARCH STREQUAL "aarch64")
+    set(PY_WHEEL_PLATFORM "linux_aarch64")
+  elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(PY_WHEEL_PLATFORM "linux_x86_64")
   else()
     set(PY_WHEEL_PLATFORM "linux_i686")

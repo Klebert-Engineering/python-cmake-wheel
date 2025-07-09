@@ -21,20 +21,43 @@ RUN yum update -y && yum install -y \
 RUN rm -f /usr/local/bin/cmake /usr/local/bin/ctest /usr/local/bin/cpack
 
 # Install CMake 3.31.8 (latest 3.x version)
-ADD https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-x86_64.tar.gz /tmp/
-RUN cd /tmp && \
-    tar -xzf cmake-3.31.8-linux-x86_64.tar.gz && \
-    cp -r cmake-3.31.8-linux-x86_64/bin/* /usr/local/bin/ && \
-    cp -r cmake-3.31.8-linux-x86_64/share/* /usr/local/share/ && \
+# Map Docker architecture to CMake architecture naming
+RUN if [ "${architecture}" = "x86_64" ]; then \
+        CMAKE_ARCH="x86_64"; \
+    elif [ "${architecture}" = "aarch64" ]; then \
+        CMAKE_ARCH="aarch64"; \
+    else \
+        echo "Unsupported architecture: ${architecture}"; exit 1; \
+    fi && \
+    curl -L https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-${CMAKE_ARCH}.tar.gz -o /tmp/cmake.tar.gz && \
+    cd /tmp && \
+    tar -xzf cmake.tar.gz && \
+    cp -r cmake-3.31.8-linux-${CMAKE_ARCH}/bin/* /usr/local/bin/ && \
+    cp -r cmake-3.31.8-linux-${CMAKE_ARCH}/share/* /usr/local/share/ && \
     rm -rf /tmp/cmake*
 
-# Install Python
-ADD https://www.python.org/ftp/python/${pyver_long}/Python-${pyver_long}.tgz /usr/local/src
-RUN cd /usr/local/src && \
-    tar -xzvf Python-${pyver_long}.tgz && \
-    cd Python-${pyver_long} && \
-    ./configure --enable-shared && \
-    make -j$(nproc) install
-RUN ln -sf /usr/local/src/Python-${pyver_long}/libpython${pyver_short}.so.1.0 /lib64/libpython${pyver_short}.so.1.0
-RUN pip${pyver_short} install wheel
-RUN pip${pyver_short} install -U pip
+# Use pre-installed Python from manylinux image
+# The manylinux images already have Python versions in /opt/python/
+# Create symlinks to make the Python version available system-wide
+RUN if [ -d /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.') ]; then \
+        # Create versioned symlinks
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/python /usr/local/bin/python${pyver_short} && \
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/pip /usr/local/bin/pip${pyver_short} && \
+        # Override the generic python3 to point to our specific version
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/python /usr/local/bin/python3 && \
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/pip /usr/local/bin/pip3 && \
+        # Also create python symlink for maximum compatibility
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/python /usr/local/bin/python && \
+        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/pip /usr/local/bin/pip && \
+        echo "Using pre-installed Python ${pyver_short}"; \
+    else \
+        echo "Python ${pyver_short} not found in /opt/python/"; \
+        exit 1; \
+    fi
+
+# Ensure wheel is installed (should already be present in manylinux images)
+RUN pip${pyver_short} install --upgrade pip wheel
+
+# Set environment variables to help CMake find the correct Python
+# Note: We set PATH to prioritize /usr/local/bin where our symlinks are
+ENV PATH=/usr/local/bin:$PATH

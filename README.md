@@ -108,6 +108,24 @@ add_wheel_test(mylib-test
 )
 ```
 
+## Building Docker Images
+
+To build the manylinux Docker images for different architectures:
+
+```bash
+# Build x86_64 images (default)
+./deploy.bash
+
+# Build ARM64/aarch64 images
+./deploy.bash --arch aarch64
+
+# Build and push images with version tag
+./deploy.bash --version 2025.1 --push
+
+# Build, tag as latest, and push
+./deploy.bash --version 2025.1 --push --latest
+```
+
 ## CI Utilities
 
 This repository also provides several utilities to facilitate additional wheel deployment steps that are needed on macOS and Linux.
@@ -116,16 +134,22 @@ This repository also provides several utilities to facilitate additional wheel d
 
 For CI jobs, this repo provides the following docker images:
 
+**x86_64 architecture:**
 * `manylinux-cpp17-py3.9-x86_64`
 * `manylinux-cpp17-py3.10-x86_64`
 * `manylinux-cpp17-py3.11-x86_64`
 * `manylinux-cpp17-py3.12-x86_64`
 * `manylinux-cpp17-py3.13-x86_64`
 
-This images are based on GLIBC 2.28, so e.g. the minimum Ubuntu version
-for wheels from your CI will be 21.04.
+**aarch64 (ARM64) architecture:**
+* `manylinux-cpp17-py3.9-aarch64`
+* `manylinux-cpp17-py3.10-aarch64`
+* `manylinux-cpp17-py3.11-aarch64`
+* `manylinux-cpp17-py3.12-aarch64`
+* `manylinux-cpp17-py3.13-aarch64`
 
-Note: `aarch64` images are not yet deployed. Let us know if you need them!
+These images are based on GLIBC 2.28, so e.g. the minimum Ubuntu version
+for wheels from your CI will be 21.04.
 
 You may use a Github Actions Snippet like this to build your wheels:
 
@@ -135,8 +159,9 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        architecture: ["x86_64", "aarch64"]
     runs-on: ubuntu-latest
-    container: ghcr.io/klebert-engineering/manylinux-cpp17-py${{ matrix.python-version }}-x86_64:latest
+    container: ghcr.io/klebert-engineering/manylinux-cpp17-py${{ matrix.python-version }}-${{ matrix.architecture }}:latest
     steps:
       - uses: actions/checkout@v3
         with:

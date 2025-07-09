@@ -4,7 +4,7 @@ image_name="manylinux-cpp17-py"
 version="2025.1"
 push=""
 latest=""
-python_versions=(3.9.13 3.10.9 3.11.1 3.12.4 3.13.1)
+python_versions=(3.9 3.10 3.11 3.12 3.13)
 architecture=x86_64
 
 while [[ $# -gt 0 ]]; do
@@ -30,21 +30,24 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Validate architecture
+if [[ "$architecture" != "x86_64" && "$architecture" != "aarch64" ]]; then
+  echo "Error: Unsupported architecture '$architecture'. Supported architectures are: x86_64, aarch64"
+  exit 1
+fi
 
-for pyver_long in "${python_versions[@]}"; do
 
-    pyver_short=$(echo "$pyver_long" | sed "s/\\.[0-9]\+\$//")
+for pyver in "${python_versions[@]}"; do
 
-    echo "Building $architecture manylinux Docker image for Python $pyver_short ($pyver_long)..."
+    echo "Building $architecture manylinux Docker image for Python $pyver..."
 
-    dockerfile="Dockerfile-$pyver_long-$architecture"
+    dockerfile="Dockerfile-$pyver-$architecture"
 
-    sed -e "s/\${pyver_long}/$pyver_long/g" \
-        -e "s/\${pyver_short}/$pyver_short/g" \
+    sed -e "s/\${pyver_short}/$pyver/g" \
         -e "s/\${architecture}/$architecture/g" \
         Dockerfile.template > $dockerfile
 
-    image_name_full="ghcr.io/klebert-engineering/$image_name$pyver_short-$architecture"
+    image_name_full="ghcr.io/klebert-engineering/$image_name$pyver-$architecture"
     docker build -t "$image_name_full:$version" -f $dockerfile .
 
     if [[ -n "$latest" ]]; then
