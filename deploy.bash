@@ -43,7 +43,9 @@ for pyver in "${python_versions[@]}"; do
 
     dockerfile="Dockerfile-$pyver-$architecture"
 
+    pyver_no_dot=$(echo $pyver | tr -d '.')
     sed -e "s/\${pyver_short}/$pyver/g" \
+        -e "s/\${pyver_short_no_dot}/$pyver_no_dot/g" \
         -e "s/\${architecture}/$architecture/g" \
         Dockerfile.template > $dockerfile
 
