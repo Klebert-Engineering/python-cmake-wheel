@@ -39,16 +39,17 @@ RUN if [ "${architecture}" = "x86_64" ]; then \
 # Use pre-installed Python from manylinux image
 # The manylinux images already have Python versions in /opt/python/
 # Create symlinks to make the Python version available system-wide
-RUN if [ -d /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.') ]; then \
+RUN PYVER_NO_DOT=$(echo ${pyver_short} | tr -d '.') && \
+    if [ -d /opt/python/cp${PYVER_NO_DOT}-cp${PYVER_NO_DOT} ]; then \
         # Create versioned symlinks
-        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/python /usr/local/bin/python${pyver_short} && \
-        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/pip /usr/local/bin/pip${pyver_short} && \
+        ln -sf /opt/python/cp${PYVER_NO_DOT}-cp${PYVER_NO_DOT}/bin/python /usr/local/bin/python${pyver_short} && \
+        ln -sf /opt/python/cp${PYVER_NO_DOT}-cp${PYVER_NO_DOT}/bin/pip /usr/local/bin/pip${pyver_short} && \
         # Override the generic python3 to point to our specific version
-        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/python /usr/local/bin/python3 && \
-        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/pip /usr/local/bin/pip3 && \
+        ln -sf /opt/python/cp${PYVER_NO_DOT}-cp${PYVER_NO_DOT}/bin/python /usr/local/bin/python3 && \
+        ln -sf /opt/python/cp${PYVER_NO_DOT}-cp${PYVER_NO_DOT}/bin/pip /usr/local/bin/pip3 && \
         # Also create python symlink for maximum compatibility
-        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/python /usr/local/bin/python && \
-        ln -sf /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_short} | tr -d '.')/bin/pip /usr/local/bin/pip && \
+        ln -sf /opt/python/cp${PYVER_NO_DOT}-cp${PYVER_NO_DOT}/bin/python /usr/local/bin/python && \
+        ln -sf /opt/python/cp${PYVER_NO_DOT}-cp${PYVER_NO_DOT}/bin/pip /usr/local/bin/pip && \
         echo "Using pre-installed Python ${pyver_short}"; \
     else \
         echo "Python ${pyver_short} not found in /opt/python/"; \
@@ -58,6 +59,6 @@ RUN if [ -d /opt/python/cp$(echo ${pyver_short} | tr -d '.')-cp$(echo ${pyver_sh
 # Ensure wheel is installed (should already be present in manylinux images)
 RUN pip${pyver_short} install --upgrade pip wheel
 
-# Set environment variables to help CMake find the correct Python
-# Note: We set PATH to prioritize /usr/local/bin where our symlinks are
-ENV PATH=/usr/local/bin:$PATH
+# Set PATH to include the Python bin directory
+# This ensures pip-installed executables (like conan) are available globally
+ENV PATH=/usr/local/bin:/opt/python/cp${pyver_short_no_dot}-cp${pyver_short_no_dot}/bin:$PATH
