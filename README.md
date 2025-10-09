@@ -187,8 +187,7 @@ jobs:
 
 ### macOS
 
-For macOS, this repo provides the `repair-wheel-macos.bash` script, which controls
-invocations of the `delocate-path` tool which bundles dependencies into your wheel.
+macOS wheels are now built correctly without any post-processing. (Note: Versions prior to 1.1.0 required manual wheel repair with `repair-wheel-macos.bash`, which is no longer needed.)
 
 Use it in your Github action like this:
 
@@ -212,16 +211,9 @@ jobs:
       - name: Build (macOS)
         if: matrix.os == 'macos-13'
         run: |
-          python -m pip install delocate
-          export MACOSX_DEPLOYMENT_TARGET=10.15
           mkdir build && cd build
           cmake ..
           cmake --build .
-          # Important step: Audit the wheels!
-          mv bin/wheel bin/wheel-auditme  # Same as on Linux
-          ./_deps/python-cmake-wheel-src/repair-wheel-macos.bash \
-                "$(pwd)"/bin/wheel-auditme/mapget*.whl \
-                "$(pwd)"/bin/wheel mapget
       - name: Deploy
         uses: actions/upload-artifact@v3
         with:
