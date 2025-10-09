@@ -185,10 +185,17 @@ function (add_wheel WHEEL_TARGET)
 
   add_dependencies(wheel ${WHEEL_TARGET}-setup-py)
 
-  set_target_properties(${WHEEL_TARGET} PROPERTIES
-    BUILD_RPATH "\$ORIGIN;" # Override hardcoded RPATH
-    INSTALL_RPATH "\$ORIGIN;"
-  )
+  if(APPLE)
+    set_target_properties(${WHEEL_TARGET} PROPERTIES
+      BUILD_RPATH "@loader_path" # macOS uses @loader_path
+      INSTALL_RPATH "@loader_path"
+    )
+  else()
+    set_target_properties(${WHEEL_TARGET} PROPERTIES
+      BUILD_RPATH "\$ORIGIN;" # Linux uses $ORIGIN
+      INSTALL_RPATH "\$ORIGIN;"
+    )
+  endif()
 endfunction()
 
 function (add_wheel_test TEST_NAME)
