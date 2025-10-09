@@ -1,0 +1,54 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-14, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        exclude:
+          # Python 3.10 doesn't have ARM64 builds for macOS
+          - os: macos-14
+            python-version: "3.10"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - name: Install Python dependencies
+        run: python -m pip install setuptools wheel
+
+      - name: Configure
+        working-directory: tests/macos-wheel-test
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        working-directory: tests/macos-wheel-test/build
+        run: cmake --build .
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        working-directory: tests/macos-wheel-test/build
+        run: cmake --build . --config Release
+
+      - name: Test (Linux/macOS)
+        if: runner.os != 'Windows'
+        working-directory: tests/macos-wheel-test/build
+        run: ctest --verbose --no-tests=error
+
+      - name: Test (Windows)
+        if: runner.os == 'Windows'
+        working-directory: tests/macos-wheel-test/build
+        run: ctest -C Release --verbose --no-tests=error
