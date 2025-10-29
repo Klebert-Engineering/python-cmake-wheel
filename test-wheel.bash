@@ -59,7 +59,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -f|--foreground)
       echo "→ Starting foreground task: $2"
-      $2
+      if [[ "$2" == *.py ]] && [[ "$2" != *[[:space:]]* ]]; then
+        python "$2"
+      else
+        $2
+      fi
       shift
       shift
       ;;

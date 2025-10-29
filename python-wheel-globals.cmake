@@ -5,6 +5,17 @@ if (APPLE)
   set(CMAKE_MACOSX_RPATH ON)
   set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};@loader_path")
+
+  # Check for delocate (required for proper library dependency handling)
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c "import delocate"
+    RESULT_VARIABLE DELOCATE_CHECK
+    OUTPUT_QUIET
+    ERROR_QUIET
+  )
+  if(NOT DELOCATE_CHECK EQUAL 0)
+    message(FATAL_ERROR "delocate is required for macOS wheel building to handle library dependencies correctly. Install with: pip install delocate")
+  endif()
 endif()
 
 # Guess python wheel filename infixes (abi + platform) to be used

@@ -168,9 +168,21 @@ function (add_wheel WHEEL_TARGET)
   configure_file("${PY_WHEEL_SETUP_FILE}" "${SETUP_FILE}")
 
   if(APPLE)
+    # Run delocate-path to fix library dependencies and rpaths
+    add_custom_target(${WHEEL_TARGET}-delocate
+      COMMAND
+        "${Python3_EXECUTABLE}" "-m" "delocate.cmd.delocate_path"
+          "-L" "${WHEEL_NAME}.dylibs"
+          "${WHEEL_PACKAGE_DIR}"
+      COMMENT "Fixing macOS library dependencies with delocate-path"
+    )
+    add_dependencies(${WHEEL_TARGET}-delocate ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
+
     set(EXTRA_ARGS COMMAND "${Python3_EXECUTABLE}" "${PY_CHANGE_TAG_FILE}" "${WHEEL_DEPLOY_DIRECTORY}" "${WHEEL_NAME}")
+    set(DELOCATE_DEPENDENCY ${WHEEL_TARGET}-delocate)
   else()
     set(EXTRA_ARGS "")
+    set(DELOCATE_DEPENDENCY ${WHEEL_TARGET}-copy-files)
   endif()
 
   add_custom_target(${WHEEL_TARGET}-setup-py
@@ -181,14 +193,21 @@ function (add_wheel WHEEL_TARGET)
         "-w" "${WHEEL_DEPLOY_DIRECTORY}"
       ${EXTRA_ARGS})
 
-  add_dependencies(${WHEEL_TARGET}-setup-py ${WHEEL_TARGET}-copy-files ${WHEEL_TARGET})
+  add_dependencies(${WHEEL_TARGET}-setup-py ${DELOCATE_DEPENDENCY} ${WHEEL_TARGET})
 
   add_dependencies(wheel ${WHEEL_TARGET}-setup-py)
 
-  set_target_properties(${WHEEL_TARGET} PROPERTIES
-    BUILD_RPATH "\$ORIGIN;" # Override hardcoded RPATH
-    INSTALL_RPATH "\$ORIGIN;"
-  )
+  if(APPLE)
+    set_target_properties(${WHEEL_TARGET} PROPERTIES
+      BUILD_RPATH "@loader_path" # macOS uses @loader_path
+      INSTALL_RPATH "@loader_path"
+    )
+  else()
+    set_target_properties(${WHEEL_TARGET} PROPERTIES
+      BUILD_RPATH "\$ORIGIN;" # Linux uses $ORIGIN
+      INSTALL_RPATH "\$ORIGIN;"
+    )
+  endif()
 endfunction()
 
 function (add_wheel_test TEST_NAME)

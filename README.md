@@ -76,8 +76,7 @@ add_wheel(mylib-python-bindings
 
 The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.
 
-**Note: On macOS, when the `MACOSX_DEPLOYMENT_TARGET` env is set, the wheel will be
-tagged with the indicated deployment target version.**
+**Note: On macOS, `delocate` must be installed (`pip install delocate`) for proper handling of library dependencies. The build process automatically invokes `delocate-path` to fix rpaths in bundled libraries, ensuring transitive dependencies work correctly. When `MACOSX_DEPLOYMENT_TARGET` is set, the wheel will be tagged with the indicated deployment target version.**
 
 ## Adding tests
 
@@ -187,8 +186,7 @@ jobs:
 
 ### macOS
 
-For macOS, this repo provides the `repair-wheel-macos.bash` script, which controls
-invocations of the `delocate-path` tool which bundles dependencies into your wheel.
+macOS wheels require `delocate` for proper handling of library dependencies. The build process automatically invokes `delocate-path` to fix rpaths in all bundled libraries, ensuring transitive dependencies (e.g., OpenSSL → libcrypto) work correctly at runtime.
 
 Use it in your Github action like this:
 
@@ -209,19 +207,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+      - name: Install delocate
+        run: pip install delocate
       - name: Build (macOS)
         if: matrix.os == 'macos-13'
         run: |
-          python -m pip install delocate
-          export MACOSX_DEPLOYMENT_TARGET=10.15
           mkdir build && cd build
           cmake ..
           cmake --build .
-          # Important step: Audit the wheels!
-          mv bin/wheel bin/wheel-auditme  # Same as on Linux
-          ./_deps/python-cmake-wheel-src/repair-wheel-macos.bash \
-                "$(pwd)"/bin/wheel-auditme/mapget*.whl \
-                "$(pwd)"/bin/wheel mapget
       - name: Deploy
         uses: actions/upload-artifact@v3
         with:
