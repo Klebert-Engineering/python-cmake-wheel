@@ -76,8 +76,7 @@ add_wheel(mylib-python-bindings
 
 The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.
 
-**Note: On macOS, when the `MACOSX_DEPLOYMENT_TARGET` env is set, the wheel will be
-tagged with the indicated deployment target version.**
+**Note: On macOS, `delocate` must be installed (`pip install delocate`) for proper handling of library dependencies. The build process automatically invokes `delocate-path` to fix rpaths in bundled libraries, ensuring transitive dependencies work correctly. When `MACOSX_DEPLOYMENT_TARGET` is set, the wheel will be tagged with the indicated deployment target version.**
 
 ## Adding tests
 
@@ -187,7 +186,7 @@ jobs:
 
 ### macOS
 
-macOS wheels are now built correctly without any post-processing. (Note: Versions prior to 1.1.0 required manual wheel repair with `repair-wheel-macos.bash`, which is no longer needed.)
+macOS wheels require `delocate` for proper handling of library dependencies. The build process automatically invokes `delocate-path` to fix rpaths in all bundled libraries, ensuring transitive dependencies (e.g., OpenSSL → libcrypto) work correctly at runtime.
 
 Use it in your Github action like this:
 
@@ -208,6 +207,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+      - name: Install delocate
+        run: pip install delocate
       - name: Build (macOS)
         if: matrix.os == 'macos-13'
         run: |
