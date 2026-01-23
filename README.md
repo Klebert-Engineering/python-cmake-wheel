@@ -107,6 +107,8 @@ add_wheel_test(mylib-test
 )
 ```
 
+By default, `add_wheel_test(...)` creates the temporary virtual environment using the same `Python3_EXECUTABLE` that CMake found. To override the interpreter used for the venv, set `PYTHON_WHEEL_TEST_EXECUTABLE` in the environment at configure time, or override the test's `ENVIRONMENT` property.
+
 ## Building Docker Images
 
 To build the manylinux Docker images for different architectures:

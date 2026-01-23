@@ -220,6 +220,12 @@ function (add_wheel_test TEST_NAME)
     "WORKING_DIRECTORY"
     "COMMANDS" ${ARGN})
 
+  set(wheel_test_python_executable "${Python3_EXECUTABLE}")
+  if (DEFINED ENV{PYTHON_WHEEL_TEST_EXECUTABLE} AND NOT "$ENV{PYTHON_WHEEL_TEST_EXECUTABLE}" STREQUAL "")
+    set(wheel_test_python_executable "$ENV{PYTHON_WHEEL_TEST_EXECUTABLE}")
+  endif()
+  file(TO_CMAKE_PATH "${wheel_test_python_executable}" wheel_test_python_executable_cmake_path)
+
   add_test(
     NAME
       ${TEST_NAME}
@@ -229,4 +235,7 @@ function (add_wheel_test TEST_NAME)
       bash "${TEST_WHEEL_BASH}"
         -w "${WHEEL_DEPLOY_DIRECTORY}"
         ${WHEEL_TEST_COMMANDS})
+
+  set_property(TEST ${TEST_NAME} APPEND PROPERTY
+    ENVIRONMENT "PYTHON_WHEEL_TEST_EXECUTABLE=${wheel_test_python_executable_cmake_path}")
 endfunction()

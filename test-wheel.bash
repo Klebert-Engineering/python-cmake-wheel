@@ -2,13 +2,25 @@
 
 set -e
 
-my_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-. "$my_dir/python.bash"
+venv_python="${PYTHON_WHEEL_TEST_EXECUTABLE:-}"
+if [[ -z "$venv_python" ]]; then
+  echo "PYTHON_WHEEL_TEST_EXECUTABLE is not set; using 'python3' from PATH." >&2
+  venv_python="python3"
+fi
 
 venv=$(mktemp -d)
-echo "→ Setting up a virtual environment in $venv using python '$(which python3)' ($(python3 --version))..."
-python3 -m venv "$venv"
+echo "→ Setting up a virtual environment in $venv using python '$venv_python' ($("$venv_python" --version))..."
+
+"$venv_python" -m venv "$venv"
+
+activate_path="bin/activate"
+if [[ -f "$venv/Scripts/activate" ]]; then
+  activate_path="Scripts/activate"
+fi
+
+# shellcheck disable=SC1090
 source "$venv/$activate_path"
+
 python -m pip install -U pip
 pip install pytest
 
@@ -18,7 +30,7 @@ trap '
   failed_pids=()
   for pid in $(jobs -p); do
     if kill -0 $pid >/dev/null 2>&1; then
-      # Background process is still running - good.
+      # Background process is still running - kill it.
       kill $pid
     else
       exit_status=$?
