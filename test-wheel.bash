@@ -13,13 +13,17 @@ echo "→ Setting up a virtual environment in $venv using python '$venv_python' 
 
 "$venv_python" -m venv "$venv"
 
-activate_path="bin/activate"
-if [[ -f "$venv/Scripts/activate" ]]; then
-  activate_path="Scripts/activate"
+venv_bin="$venv/bin"
+if [[ -d "$venv/Scripts" ]]; then
+  venv_bin="$venv/Scripts"
 fi
 
-# shellcheck disable=SC1090
-source "$venv/$activate_path"
+# NOTE: Do not source the venv's `activate` script here. On Windows, `venv`
+# writes `VIRTUAL_ENV` as an absolute Windows path (e.g. `C:\...`) which breaks
+# PATH handling in Git-Bash/MSYS. Instead, prepend the venv bin dir to PATH.
+export VIRTUAL_ENV="$venv"
+export PATH="$venv_bin:$PATH"
+hash -r 2>/dev/null || true
 
 python -m pip install -U pip
 pip install pytest
@@ -57,7 +61,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -w|--wheels-dir)
       echo "→ Installing wheels from $2 ..."
-      pip install --no-deps "$2"/*
+      pip install --no-deps --force-reinstall "$2"/*
       shift
       shift
       ;;
