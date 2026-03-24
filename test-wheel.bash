@@ -77,18 +77,18 @@ run_command() {
   if [[ "$cmd" == *.py ]] && [[ "$cmd" != *[[:space:]]* ]]; then
     python "$cmd"
   else
-    bash -lc "$cmd"
+    $cmd
   fi
 }
 
 launch_background_command() {
   local cmd="$1"
   if [[ "$is_windows_shell" == true ]]; then
-    bash -lc "$cmd" &
+    $cmd &
   elif command -v setsid >/dev/null 2>&1; then
-    setsid bash -lc "$cmd" &
+    setsid $cmd &
   else
-    bash -lc "$cmd" &
+    $cmd &
   fi
 }
 
