@@ -94,7 +94,7 @@ launch_background_command() {
 
 cleanup_background_jobs() {
   local pid=""
-  for pid in "${background_pids[@]}"; do
+  for pid in "${background_pids[@]:+${background_pids[@]}}"; do
     if kill -0 "$pid" >/dev/null 2>&1; then
       terminate_pid_tree "$pid"
     else
@@ -126,7 +126,7 @@ on_exit() {
   cleanup_virtualenv
 
   if [[ ${#failed_pids[@]} -gt 0 ]]; then
-    echo "The following background processes exited with nonzero status: ${failed_pids[@]}"
+    echo "The following background processes exited with nonzero status: ${failed_pids[@]:+${failed_pids[@]}}"
     return 1
   fi
   return 0
