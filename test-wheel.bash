@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 venv_python="${PYTHON_WHEEL_TEST_EXECUTABLE:-}"
 if [[ -z "$venv_python" ]]; then
@@ -29,33 +29,110 @@ python -m pip install -U pip
 pip install pytest
 
 cleanup=true
+background_pids=()
+failed_pids=()
+cleanup_done=false
 
-trap '
-  failed_pids=()
-  for pid in $(jobs -p); do
-    if kill -0 $pid >/dev/null 2>&1; then
-      # Background process is still running - kill it.
-      kill $pid
+is_windows_shell=false
+case "${OSTYPE:-}" in
+  msys*|cygwin*)
+    is_windows_shell=true
+    ;;
+esac
+if [[ "${OS:-}" == "Windows_NT" ]]; then
+  is_windows_shell=true
+fi
+
+terminate_pid_tree() {
+  local pid="$1"
+
+  if ! kill -0 "$pid" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "$is_windows_shell" == true ]] && command -v taskkill >/dev/null 2>&1; then
+    taskkill //PID "$pid" //T //F >/dev/null 2>&1 || true
+  else
+    kill -TERM "-$pid" >/dev/null 2>&1 || kill "$pid" >/dev/null 2>&1 || true
+  fi
+
+  local deadline=$((SECONDS + 20))
+  while kill -0 "$pid" >/dev/null 2>&1; do
+    if (( SECONDS >= deadline )); then
+      if [[ "$is_windows_shell" == true ]] && command -v taskkill >/dev/null 2>&1; then
+        taskkill //PID "$pid" //T //F >/dev/null 2>&1 || true
+      else
+        kill -KILL "-$pid" >/dev/null 2>&1 || kill -9 "$pid" >/dev/null 2>&1 || true
+      fi
+      break
+    fi
+    sleep 1
+  done
+
+  wait "$pid" 2>/dev/null || true
+}
+
+run_command() {
+  local cmd="$1"
+  if [[ "$cmd" == *.py ]] && [[ "$cmd" != *[[:space:]]* ]]; then
+    python "$cmd"
+  else
+    bash -lc "$cmd"
+  fi
+}
+
+launch_background_command() {
+  local cmd="$1"
+  if [[ "$is_windows_shell" == true ]]; then
+    bash -lc "$cmd" &
+  elif command -v setsid >/dev/null 2>&1; then
+    setsid bash -lc "$cmd" &
+  else
+    bash -lc "$cmd" &
+  fi
+}
+
+cleanup_background_jobs() {
+  local pid=""
+  for pid in "${background_pids[@]}"; do
+    if kill -0 "$pid" >/dev/null 2>&1; then
+      terminate_pid_tree "$pid"
     else
-      exit_status=$?
-      if [[ $exit_status -eq 0 ]]; then
+      if wait "$pid"; then
         echo "Background task $pid already exited with zero status."
       else
+        local exit_status=$?
         echo "Background task $pid exited with nonzero status ($exit_status)."
         failed_pids+=("$pid")
       fi
     fi
   done
+}
 
+cleanup_virtualenv() {
   if [[ "$cleanup" == "true" ]]; then
-    echo "→ Removing $venv"; rm -rf "$venv"
+    echo "→ Removing $venv"
+    rm -rf "$venv"
   fi
+}
+
+on_exit() {
+  if [[ "$cleanup_done" == "true" ]]; then
+    return 0
+  fi
+  cleanup_done=true
+  set +e
+  cleanup_background_jobs
+  cleanup_virtualenv
 
   if [[ ${#failed_pids[@]} -gt 0 ]]; then
     echo "The following background processes exited with nonzero status: ${failed_pids[@]}"
-    exit 1
+    return 1
   fi
-  ' EXIT
+  return 0
+}
+
+trap on_exit EXIT
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -67,7 +144,8 @@ while [[ $# -gt 0 ]]; do
       ;;
     -b|--background)
       echo "→ Launching background task: $2"
-      $2 &
+      launch_background_command "$2"
+      background_pids+=("$!")
       echo "... started with PID: $!"
       sleep 5
       shift
@@ -75,11 +153,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     -f|--foreground)
       echo "→ Starting foreground task: $2"
-      if [[ "$2" == *.py ]] && [[ "$2" != *[[:space:]]* ]]; then
-        python "$2"
-      else
-        $2
-      fi
+      run_command "$2"
       shift
       shift
       ;;
@@ -91,3 +165,8 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+cleanup_status=0
+on_exit || cleanup_status=$?
+trap - EXIT
+exit "$cleanup_status"
