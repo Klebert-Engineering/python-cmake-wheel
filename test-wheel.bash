@@ -116,10 +116,21 @@ cleanup_background_jobs() {
 }
 
 cleanup_virtualenv() {
-  if [[ "$cleanup" == "true" ]]; then
-    echo "→ Removing $venv"
-    rm -rf "$venv"
+  if [[ "$cleanup" != "true" ]]; then
+    return 0
   fi
+
+  if [[ "$is_windows_shell" == true ]]; then
+    # GitHub's Windows runners clean the workspace after each job anyway.
+    # Avoid synchronously deleting the temporary venv here: Git-Bash/MSYS can
+    # spend minutes tearing down a Python tree after the background services
+    # were killed, which turns integration tests into apparent hangs.
+    echo "→ Skipping synchronous removal of $venv on Windows"
+    return 0
+  fi
+
+  echo "→ Removing $venv"
+  rm -rf "$venv"
 }
 
 on_exit() {
