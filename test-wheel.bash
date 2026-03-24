@@ -50,8 +50,22 @@ terminate_pid_tree() {
     return 0
   fi
 
-  if [[ "$is_windows_shell" == true ]] && command -v taskkill >/dev/null 2>&1; then
-    taskkill //PID "$pid" //T //F >/dev/null 2>&1 || true
+  if [[ "$is_windows_shell" == true ]]; then
+    # Git-Bash/MSYS background jobs are tracked via shell PIDs. Use POSIX
+    # signals against that PID namespace instead of `taskkill`, which expects
+    # native Windows PIDs and can silently miss the spawned service.
+    kill -TERM "$pid" >/dev/null 2>&1 || true
+
+    local deadline=$((SECONDS + 20))
+    while kill -0 "$pid" >/dev/null 2>&1; do
+      if (( SECONDS >= deadline )); then
+        kill -KILL "$pid" >/dev/null 2>&1 || true
+        break
+      fi
+      sleep 1
+    done
+
+    wait "$pid" 2>/dev/null || true
     return 0
   fi
 
@@ -92,15 +106,6 @@ launch_background_command() {
 cleanup_background_jobs() {
   local pid=""
   for pid in "${background_pids[@]:+${background_pids[@]}}"; do
-    if [[ "$is_windows_shell" == true ]]; then
-      if kill -0 "$pid" >/dev/null 2>&1; then
-        terminate_pid_tree "$pid"
-      else
-        wait "$pid" 2>/dev/null || true
-      fi
-      continue
-    fi
-
     if kill -0 "$pid" >/dev/null 2>&1; then
       terminate_pid_tree "$pid"
     else
