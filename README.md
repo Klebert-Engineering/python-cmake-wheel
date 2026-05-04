@@ -93,7 +93,8 @@ add_wheel_test(mylib-test
     # Two types of commands are available:
     #  -f (--foreground) are synchronous test tasks. They are executed
     #     within a clean temporary python environment, in which all
-    #     wheels from your current WHEEL_DEPLOY_DIRECTORY are installed.
+    #     test dependencies are installed and the newest wheel from your
+    #     current WHEEL_DEPLOY_DIRECTORY is installed.
     #  -b (--background) are asynchronous background services that need
     #     to run while the synchronous tasks are running, for example
     #     to implement an integration test. They will be killed when

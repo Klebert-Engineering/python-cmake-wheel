@@ -140,6 +140,41 @@ cleanup_virtualenv() {
   rm -rf "$venv"
 }
 
+resolve_wheel_for_install() {
+  local wheel_source="$1"
+
+  python - "$wheel_source" <<'PY'
+from pathlib import Path
+import sys
+
+wheel_source = Path(sys.argv[1])
+
+if wheel_source.is_file():
+    if wheel_source.suffix != ".whl":
+        raise SystemExit(f"Expected a '.whl' file, got '{wheel_source}'.")
+    print(wheel_source.resolve())
+    raise SystemExit(0)
+
+if not wheel_source.is_dir():
+    raise SystemExit(f"Wheel path '{wheel_source}' does not exist.")
+
+wheels = sorted(
+    wheel_source.glob("*.whl"),
+    key=lambda wheel: (wheel.stat().st_mtime_ns, wheel.name),
+)
+if not wheels:
+    raise SystemExit(f"No wheels found in '{wheel_source}'.")
+
+# Tests often reuse a shared deploy directory, so prefer the newest wheel
+# rather than installing every historical artifact that happens to be present.
+selected = wheels[-1]
+sys.stderr.write(
+    f"→ Installing newest wheel from {wheel_source}: {selected.name}\n"
+)
+print(selected.resolve())
+PY
+}
+
 on_exit() {
   if [[ "$cleanup_done" == "true" ]]; then
     return 0
@@ -161,8 +196,8 @@ trap on_exit EXIT
 while [[ $# -gt 0 ]]; do
   case $1 in
     -w|--wheels-dir)
-      echo "→ Installing wheels from $2 ..."
-      pip install --no-deps --force-reinstall "$2"/*
+      selected_wheel="$(resolve_wheel_for_install "$2")"
+      pip install --no-deps --force-reinstall "$selected_wheel"
       shift
       shift
       ;;
