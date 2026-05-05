@@ -91,6 +91,16 @@ add_wheel(py_simple
     TARGET_DEPENDENCIES simple_lib
 )
 
+set(STALE_WHEEL_PATH "${WHEEL_DEPLOY_DIRECTORY}/simple_test-0.9.0-py3-none-any.whl")
+add_custom_target(seed-stale-wheel
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${WHEEL_DEPLOY_DIRECTORY}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_wheel.py"
+        "${STALE_WHEEL_PATH}"
+    COMMENT "Seeding an older stale wheel to verify newest-wheel selection"
+)
+add_dependencies(py_simple-setup-py seed-stale-wheel)
+
 # Add test to validate wheel functionality
 add_wheel_test(test-simple-wheel
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

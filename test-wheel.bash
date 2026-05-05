@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 venv_python="${PYTHON_WHEEL_TEST_EXECUTABLE:-}"
 if [[ -z "$venv_python" ]]; then
@@ -29,45 +29,182 @@ python -m pip install -U pip
 pip install pytest
 
 cleanup=true
+background_pids=()
+failed_pids=()
+cleanup_done=false
 
-trap '
-  failed_pids=()
-  for pid in $(jobs -p); do
-    if kill -0 $pid >/dev/null 2>&1; then
-      # Background process is still running - kill it.
-      kill $pid
+is_windows_shell=false
+case "${OSTYPE:-}" in
+  msys*|cygwin*)
+    is_windows_shell=true
+    ;;
+esac
+if [[ "${OS:-}" == "Windows_NT" ]]; then
+  is_windows_shell=true
+fi
+
+terminate_pid_tree() {
+  local pid="$1"
+
+  if ! kill -0 "$pid" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ "$is_windows_shell" == true ]]; then
+    # Git-Bash/MSYS background jobs are tracked via shell PIDs. Use POSIX
+    # signals against that PID namespace instead of `taskkill`, which expects
+    # native Windows PIDs and can silently miss the spawned service.
+    #
+    # Keep this non-blocking on Windows: waiting/spinning in the MSYS shell can
+    # itself fail with `fork: Resource temporarily unavailable` during test
+    # teardown.
+    kill -TERM "$pid" >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  kill -TERM "-$pid" >/dev/null 2>&1 || kill "$pid" >/dev/null 2>&1 || true
+
+  local deadline=$((SECONDS + 20))
+  while kill -0 "$pid" >/dev/null 2>&1; do
+    if (( SECONDS >= deadline )); then
+      kill -KILL "-$pid" >/dev/null 2>&1 || kill -9 "$pid" >/dev/null 2>&1 || true
+      break
+    fi
+    sleep 1
+  done
+
+  wait "$pid" 2>/dev/null || true
+}
+
+run_command() {
+  local cmd="$1"
+  if [[ "$cmd" == *.py ]] && [[ "$cmd" != *[[:space:]]* ]]; then
+    python "$cmd"
+  else
+    $cmd
+  fi
+}
+
+launch_background_command() {
+  local cmd="$1"
+  if [[ "$is_windows_shell" == true ]]; then
+    $cmd &
+  elif command -v setsid >/dev/null 2>&1; then
+    setsid $cmd &
+  else
+    $cmd &
+  fi
+}
+
+cleanup_background_jobs() {
+  local pid=""
+  for pid in "${background_pids[@]:+${background_pids[@]}}"; do
+    if [[ "$is_windows_shell" == true ]]; then
+      if kill -0 "$pid" >/dev/null 2>&1; then
+        terminate_pid_tree "$pid"
+      else
+        wait "$pid" 2>/dev/null || true
+      fi
+      continue
+    fi
+
+    if kill -0 "$pid" >/dev/null 2>&1; then
+      terminate_pid_tree "$pid"
     else
-      exit_status=$?
-      if [[ $exit_status -eq 0 ]]; then
+      if wait "$pid"; then
         echo "Background task $pid already exited with zero status."
       else
+        local exit_status=$?
         echo "Background task $pid exited with nonzero status ($exit_status)."
         failed_pids+=("$pid")
       fi
     fi
   done
+}
 
-  if [[ "$cleanup" == "true" ]]; then
-    echo "→ Removing $venv"; rm -rf "$venv"
+cleanup_virtualenv() {
+  if [[ "$cleanup" != "true" ]]; then
+    return 0
   fi
+
+  if [[ "$is_windows_shell" == true ]]; then
+    # GitHub's Windows runners clean the workspace after each job anyway.
+    # Avoid synchronously deleting the temporary venv here: Git-Bash/MSYS can
+    # spend minutes tearing down a Python tree after the background services
+    # were killed, which turns integration tests into apparent hangs.
+    echo "→ Skipping synchronous removal of $venv on Windows"
+    return 0
+  fi
+
+  echo "→ Removing $venv"
+  rm -rf "$venv"
+}
+
+resolve_wheel_for_install() {
+  local wheel_source="$1"
+
+  python - "$wheel_source" <<'PY'
+from pathlib import Path
+import sys
+
+wheel_source = Path(sys.argv[1])
+
+if wheel_source.is_file():
+    if wheel_source.suffix != ".whl":
+        raise SystemExit(f"Expected a '.whl' file, got '{wheel_source}'.")
+    print(wheel_source.resolve())
+    raise SystemExit(0)
+
+if not wheel_source.is_dir():
+    raise SystemExit(f"Wheel path '{wheel_source}' does not exist.")
+
+wheels = sorted(
+    wheel_source.glob("*.whl"),
+    key=lambda wheel: (wheel.stat().st_mtime_ns, wheel.name),
+)
+if not wheels:
+    raise SystemExit(f"No wheels found in '{wheel_source}'.")
+
+# Tests often reuse a shared deploy directory, so prefer the newest wheel
+# rather than installing every historical artifact that happens to be present.
+selected = wheels[-1]
+sys.stderr.write(
+    f"→ Installing newest wheel from {wheel_source}: {selected.name}\n"
+)
+print(selected.resolve())
+PY
+}
+
+on_exit() {
+  if [[ "$cleanup_done" == "true" ]]; then
+    return 0
+  fi
+  cleanup_done=true
+  set +e
+  cleanup_background_jobs
+  cleanup_virtualenv
 
   if [[ ${#failed_pids[@]} -gt 0 ]]; then
-    echo "The following background processes exited with nonzero status: ${failed_pids[@]}"
-    exit 1
+    echo "The following background processes exited with nonzero status: ${failed_pids[@]:+${failed_pids[@]}}"
+    return 1
   fi
-  ' EXIT
+  return 0
+}
+
+trap on_exit EXIT
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -w|--wheels-dir)
-      echo "→ Installing wheels from $2 ..."
-      pip install --no-deps --force-reinstall "$2"/*
+      selected_wheel="$(resolve_wheel_for_install "$2")"
+      pip install --no-deps --force-reinstall "$selected_wheel"
       shift
       shift
       ;;
     -b|--background)
       echo "→ Launching background task: $2"
-      $2 &
+      launch_background_command "$2"
+      background_pids+=("$!")
       echo "... started with PID: $!"
       sleep 5
       shift
@@ -75,11 +212,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     -f|--foreground)
       echo "→ Starting foreground task: $2"
-      if [[ "$2" == *.py ]] && [[ "$2" != *[[:space:]]* ]]; then
-        python "$2"
-      else
-        $2
-      fi
+      run_command "$2"
       shift
       shift
       ;;
@@ -91,3 +224,8 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+cleanup_status=0
+on_exit || cleanup_status=$?
+trap - EXIT
+exit "$cleanup_status"
