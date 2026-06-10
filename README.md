@@ -142,6 +142,7 @@ For CI jobs, this repo provides the following docker images:
 * `manylinux-cpp17-py3.11-x86_64`
 * `manylinux-cpp17-py3.12-x86_64`
 * `manylinux-cpp17-py3.13-x86_64`
+* `manylinux-cpp17-py3.14-x86_64`
 
 **aarch64 (ARM64) architecture:**
 * `manylinux-cpp17-py3.9-aarch64`
@@ -149,6 +150,7 @@ For CI jobs, this repo provides the following docker images:
 * `manylinux-cpp17-py3.11-aarch64`
 * `manylinux-cpp17-py3.12-aarch64`
 * `manylinux-cpp17-py3.13-aarch64`
+* `manylinux-cpp17-py3.14-aarch64`
 
 These images are based on GLIBC 2.28, so e.g. the minimum Ubuntu version
 for wheels from your CI will be 21.04.
@@ -160,7 +162,7 @@ jobs:
   build-manylinux:
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         architecture: ["x86_64", "aarch64"]
     runs-on: ubuntu-latest
     container: ghcr.io/klebert-engineering/manylinux-cpp17-py${{ matrix.python-version }}-${{ matrix.architecture }}:latest
@@ -199,7 +201,7 @@ jobs:
     runs-on: macos-13
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     env:
       SCCACHE_GHA_ENABLED: "true"
     steps:

@@ -4,7 +4,7 @@ image_name="manylinux-cpp17-py"
 version="2025.1"
 push=""
 latest=""
-python_versions=(3.9 3.10 3.11 3.12 3.13)
+python_versions=(3.9 3.10 3.11 3.12 3.13 3.14)
 architecture=x86_64
 
 while [[ $# -gt 0 ]]; do
