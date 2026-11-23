@@ -20,6 +20,7 @@ include(python-wheel)
 # Placeholder statement to create the 'mylib' target.
 # Define the extension target with your binding library or Python3_add_library.
 add_library(mylib ...)
+set(MYLIB_VERSION "0.0.1")
 
 # Adapt using the following parameters:
 # NAME
@@ -63,7 +64,7 @@ add_library(mylib ...)
 #  "sub.subsub". Parent submodules must be listed explicitly.
 add_wheel(mylib
   NAME mylib
-  VERSION "0.0.1"
+  VERSION "${MYLIB_VERSION}"
   AUTHOR "Bob Ross"
   EMAIL "email@address.com"
   URL "http://python.org"
@@ -114,10 +115,8 @@ add_wheel_test(mylib-test
     "${CMAKE_CURRENT_LIST_DIR}"
   COMMANDS
     # Two types of commands are available:
-    #  -f (--foreground) are synchronous test tasks. They are executed
-    #     within a clean temporary python environment, in which all
-    #     test dependencies are installed and the newest wheel from your
-    #     current WHEEL_DEPLOY_DIRECTORY is installed.
+    #  -f (--foreground) runs synchronously in a temporary environment
+    #     with pytest and the newest local wheel from WHEEL_DEPLOY_DIRECTORY.
     #  -b (--background) are asynchronous background services that need
     #     to run while the synchronous tasks are running, for example
     #     to implement an integration test. They will be killed when
@@ -126,11 +125,16 @@ add_wheel_test(mylib-test
     #   both types. They are launched in the specified order, so
     #   make sure to put a background service before a foreground
     #   test script which depends on it.
+    -f "python -m pip install mylib==${MYLIB_VERSION}"
     -b "${CMAKE_BINARY_DIR}/a-service"
     -f "pytest test.py"
 )
 set_tests_properties(mylib-test PROPERTIES TIMEOUT 240)  # seconds; choose a limit for your test
 ```
+
+The harness installs the local wheel with `--no-deps`. The first foreground
+command above keeps that wheel and resolves its declared runtime dependencies
+before anything imports it. Install additional test-only packages explicitly.
 
 By default, `add_wheel_test(...)` creates the temporary virtual environment using the same `Python3_EXECUTABLE` that CMake found. To override the interpreter used for the venv, set `PYTHON_WHEEL_TEST_EXECUTABLE` in the environment at configure time, or override the test's `ENVIRONMENT` property.
 
