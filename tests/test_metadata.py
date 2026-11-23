@@ -27,7 +27,8 @@ class MetadataTest(unittest.TestCase):
                 metadata = message_from_bytes(archive.read(info + "METADATA"))
                 if stable:
                     self.assertEqual(metadata["Description-Content-Type"], "text/markdown")
-                    self.assertEqual(metadata.get_payload().strip(), (source / "README.md").read_text().strip())
+                    self.assertEqual(metadata.get_payload().strip().splitlines(),
+                                     (source / "README.md").read_text(encoding="utf-8").strip().splitlines())
                     self.assertEqual(metadata["License-Expression"] or metadata["License"], "BSD-3-Clause")
                 else:
                     self.assertIsNone(metadata["Description-Content-Type"])
