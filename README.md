@@ -18,7 +18,7 @@ set(WHEEL_DEPLOY_DIRECTORY "${CMAKE_BINARY_DIR}")
 include(python-wheel)
 
 # Placeholder statement to create the 'mylib' target.
-# In practice, this will probably be pybind11_add_module(...).
+# Define the extension target with your binding library or Python3_add_library.
 add_library(mylib ...)
 
 # Adapt using the following parameters:
@@ -61,7 +61,7 @@ add_library(mylib ...)
 #  Any pybind11 submodules must be listed here to support imports like 
 #  "from mod.sub import x". A nested submodule must be listed like
 #  "sub.subsub". Parent submodules must be listed explicitly.
-add_wheel(mylib-python-bindings
+add_wheel(mylib
   NAME mylib
   VERSION "0.0.1"
   AUTHOR "Bob Ross"
@@ -83,7 +83,21 @@ add_wheel(mylib-python-bindings
 )
 ```
 
-The `add_wheel` command will create a temporary `setup.py` for your project in the build folder, which bundles the necessary files. The execution of this `setup.py` is attached to the custom target `wheelname-setup-py`. It will be executed when you run `cmake --build .` in your build directory.
+The `add_wheel` command creates a temporary `setup.py` in the build folder.
+Run `cmake --build . --target wheel` there to build the package.
+
+When supplying `README_PATH`, use absolute URLs for links to project docs
+and images: PyPI doesn't resolve them against your repository. Run
+`twine check --strict` on the built wheel to check its package description.
+
+By default, the wheel targets the CPython minor version used to build it.
+If every bundled Python extension supports the CPython 3.10 stable ABI, set
+`LIMITED_API cp310` and `PYTHON_REQUIRES ">=3.10"` to build once per OS and
+architecture instead. The [working CMake example](tests/metadata/CMakeLists.txt)
+shows both modes. `LIMITED_API` sets the tag, not the compiler ABI. Audit
+the final wheel with `abi3audit --strict` and test that same artifact across
+the Python versions you support. For a nanobind split-mode extension, declare
+its backend in `MODULE_DEPENDENCIES` so pip installs it for the target interpreter.
 
 **Note: On macOS, `delocate` must be installed (`pip install delocate`) for proper handling of library dependencies. The build process automatically invokes `delocate-path` to fix rpaths in bundled libraries, ensuring transitive dependencies work correctly. When `MACOSX_DEPLOYMENT_TARGET` is set, the wheel will be tagged with the indicated deployment target version.**
 
@@ -115,12 +129,14 @@ add_wheel_test(mylib-test
     -b "${CMAKE_BINARY_DIR}/a-service"
     -f "pytest test.py"
 )
+set_tests_properties(mylib-test PROPERTIES TIMEOUT 240)  # seconds; choose a limit for your test
 ```
 
 By default, `add_wheel_test(...)` creates the temporary virtual environment using the same `Python3_EXECUTABLE` that CMake found. To override the interpreter used for the venv, set `PYTHON_WHEEL_TEST_EXECUTABLE` in the environment at configure time, or override the test's `ENVIRONMENT` property.
 
-On Windows, each test runs in its own Windows Job Object. Background services
-and their native child processes are stopped when the test ends or times out,
+On Windows, make Git Bash available to CMake at configure time. Each test runs
+in its own Windows Job Object. Background services and their native child
+processes are stopped when the test ends or times out,
 so an orphaned service cannot keep CTest's output pipe or a test port open.
 
 ## Building Docker Images
@@ -163,8 +179,8 @@ For CI jobs, this repo provides the following docker images:
 * `manylinux-cpp17-py3.13-aarch64`
 * `manylinux-cpp17-py3.14-aarch64`
 
-These images are based on GLIBC 2.28, so e.g. the minimum Ubuntu version
-for wheels from your CI will be 21.04.
+These images target glibc 2.28. Build on a runner matching the target CPU
+architecture, and use `auditwheel repair` to produce the manylinux wheel.
 
 You may use a Github Actions Snippet like this to build your wheels:
 
@@ -175,10 +191,10 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         architecture: ["x86_64", "aarch64"]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.architecture == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     container: ghcr.io/klebert-engineering/manylinux-cpp17-py${{ matrix.python-version }}-${{ matrix.architecture }}:latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Configure and Build
@@ -190,9 +206,9 @@ jobs:
           mv bin/wheel bin/wheel-auditme
           auditwheel repair bin/wheel-auditme/mapget*.whl -w bin/wheel
       - name: Deploy
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: mapget-py${{ matrix.python-version }}-ubuntu-latest
+          name: mapget-py${{ matrix.python-version }}-linux-${{ matrix.architecture }}
           path: build/**/bin/wheel/*.whl
       - name: Test
         run: |
@@ -209,32 +225,32 @@ Use it in your Github action like this:
 ```yaml
 jobs:
   build-macos:
-    runs-on: macos-13
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [macos-15, macos-15-intel]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     env:
       SCCACHE_GHA_ENABLED: "true"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
+          architecture: ${{ matrix.os == 'macos-15' && 'arm64' || 'x64' }}
       - name: Install delocate
         run: pip install delocate
       - name: Build (macOS)
-        if: matrix.os == 'macos-13'
         run: |
           mkdir build && cd build
           cmake ..
           cmake --build .
       - name: Deploy
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: mapget-py${{ matrix.python-version }}-macos-13
+          name: mapget-py${{ matrix.python-version }}-${{ matrix.os }}
           path: build/**/bin/wheel/*.whl
       - name: Test
         run: |
@@ -244,4 +260,5 @@ jobs:
 
 ### Windows
 
-No special utilties/audit steps are needed when building on Windows.
+For extensions with external DLL dependencies, inspect and, if necessary,
+repair the wheel with `delvewheel` before testing it in a clean environment.
