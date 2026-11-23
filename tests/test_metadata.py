@@ -25,6 +25,7 @@ class MetadataTest(unittest.TestCase):
                 info = "example-1.0.dist-info/"
                 self.assertIn(f"Tag: {tag}-", archive.read(info + "WHEEL").decode())
                 metadata = message_from_bytes(archive.read(info + "METADATA"))
+                self.assertEqual(metadata["Requires-Python"], ">=3.10")
                 if stable:
                     self.assertEqual(metadata["Description-Content-Type"], "text/markdown")
                     self.assertEqual(metadata.get_payload().strip().splitlines(),

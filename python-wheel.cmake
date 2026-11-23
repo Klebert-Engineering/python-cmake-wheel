@@ -37,7 +37,7 @@ endfunction()
 
 function (add_wheel WHEEL_TARGET)
   set(Python_FIND_VIRTUALENV FIRST) # Favor venv over system install
-  find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+  find_package(Python3 3.10 COMPONENTS Interpreter Development.Module REQUIRED)
 
   # Parse arguments
   cmake_parse_arguments(WHEEL
@@ -64,12 +64,12 @@ function (add_wheel WHEEL_TARGET)
   endif()
 
   if (NOT WHEEL_PYTHON_REQUIRES)
-    set(WHEEL_PYTHON_REQUIRES ">=3.9")
+    set(WHEEL_PYTHON_REQUIRES ">=3.10")
   endif()
 
   if (WHEEL_LIMITED_API)
-    if (NOT WHEEL_LIMITED_API MATCHES "^cp3([1-9][0-9]*)$")
-      message(FATAL_ERROR "LIMITED_API expects a CPython stable ABI floor such as cp310.")
+    if (NOT WHEEL_LIMITED_API MATCHES "^cp3([1-9][0-9]+)$")
+      message(FATAL_ERROR "LIMITED_API expects a CPython stable ABI floor of cp310 or newer.")
     endif()
     if (Python3_VERSION VERSION_LESS "3.${CMAKE_MATCH_1}")
       message(FATAL_ERROR "LIMITED_API ${WHEEL_LIMITED_API} is newer than Python ${Python3_VERSION}.")
@@ -231,7 +231,7 @@ endfunction()
 
 function (add_wheel_test TEST_NAME)
   set(Python_FIND_VIRTUALENV FIRST) # Favor venv over system install
-  find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+  find_package(Python3 3.10 COMPONENTS Interpreter Development.Module REQUIRED)
 
   # Parse arguments
   cmake_parse_arguments(WHEEL_TEST

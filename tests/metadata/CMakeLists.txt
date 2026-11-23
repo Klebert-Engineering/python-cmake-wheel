@@ -12,5 +12,5 @@ if (TEST_STABLE_ABI)
 else()
   Python3_add_library(example MODULE WITH_SOABI example.c)
 endif()
-add_wheel(example VERSION 1.0 AUTHOR "Example" PYTHON_REQUIRES ">=3.10"
+add_wheel(example VERSION 1.0 AUTHOR "Example"
           LICENSE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../LICENSE" ${metadata})
