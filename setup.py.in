@@ -4,6 +4,7 @@ import os, sys, stat
 import zipfile
 import subprocess
 import re
+from pathlib import Path
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from distutils.command.bdist import bdist as _bdist
@@ -76,6 +77,19 @@ kwargs = dict(
         'build_ext': cmake_build_ext,
     },
 )
+
+if '@WHEEL_README_CONTENT_TYPE@':
+    readme = Path(__file__).parent / '@WHEEL_NAME@.wheel' / '@WHEEL_NAME@' / 'README.txt'
+    kwargs.update(long_description=readme.read_text(encoding='utf-8'),
+                  long_description_content_type='@WHEEL_README_CONTENT_TYPE@')
+
+if '@WHEEL_LICENSE_EXPRESSION@':
+    kwargs['license'] = '@WHEEL_LICENSE_EXPRESSION@'
+
+if '@WHEEL_LIMITED_API@':
+    # The CMake target is already compiled against the limited API. Let the
+    # wheel builder write the same compatibility tag in the filename and WHEEL.
+    kwargs['options'] = {'bdist_wheel': {'py_limited_api': '@WHEEL_LIMITED_API@'}}
 
 for script in kwargs['scripts']:
     st = os.stat(script)

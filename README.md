@@ -36,6 +36,15 @@ add_library(mylib ...)
 #  Python version requirement. Default: >=3.9
 # DESCRIPTION
 #  Python package short description.
+# README_PATH
+#  UTF-8 README for the package index and the bundled README.txt. Markdown,
+#  reStructuredText and plain text are recognized by filename extension.
+# LICENSE_EXPRESSION
+#  Optional SPDX license expression, independent of the bundled LICENSE_PATH.
+# LIMITED_API
+#  Optional minimum CPython ABI, e.g. cp310. Use only when the extension
+#  and any bundled Python extensions were compiled for that stable ABI.
+#  This sets the wheel tag, not compiler flags or PYTHON_REQUIRES.
 # DEPLOY_FILES
 #  Additional files that should be packaged with your wheel.
 # TARGET_DEPENDENCIES
