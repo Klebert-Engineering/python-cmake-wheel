@@ -245,13 +245,19 @@ function (add_wheel_test TEST_NAME)
   endif()
   file(TO_CMAKE_PATH "${wheel_test_python_executable}" wheel_test_python_executable_cmake_path)
 
+  set(wheel_test_driver bash)
+  if(CMAKE_HOST_WIN32)
+    find_program(wheel_test_bash NAMES bash REQUIRED)
+    set(wheel_test_driver "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/windows-test-job.py" "${wheel_test_bash}")
+  endif()
+
   add_test(
     NAME
       ${TEST_NAME}
     WORKING_DIRECTORY
       "${WHEEL_TEST_WORKING_DIRECTORY}"
     COMMAND
-      bash "${TEST_WHEEL_BASH}"
+      ${wheel_test_driver} "${TEST_WHEEL_BASH}"
         -w "${WHEEL_DEPLOY_DIRECTORY}"
         ${WHEEL_TEST_COMMANDS})
 

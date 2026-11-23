@@ -119,6 +119,10 @@ add_wheel_test(mylib-test
 
 By default, `add_wheel_test(...)` creates the temporary virtual environment using the same `Python3_EXECUTABLE` that CMake found. To override the interpreter used for the venv, set `PYTHON_WHEEL_TEST_EXECUTABLE` in the environment at configure time, or override the test's `ENVIRONMENT` property.
 
+On Windows, each test runs in its own Windows Job Object. Background services
+and their native child processes are stopped when the test ends or times out,
+so an orphaned service cannot keep CTest's output pipe or a test port open.
+
 ## Building Docker Images
 
 To build the manylinux Docker images for different architectures:
