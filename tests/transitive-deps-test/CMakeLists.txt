@@ -18,7 +18,7 @@ include(python-wheel)
 set(WHEEL_DEPLOY_DIRECTORY "${CMAKE_BINARY_DIR}/wheel")
 
 # Find Python
-find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+find_package(Python3 3.10 COMPONENTS Interpreter Development.Module REQUIRED)
 
 # Fetch CPM.cmake
 set(CPM_DOWNLOAD_VERSION 0.40.2)
@@ -83,7 +83,7 @@ add_wheel(py_transitive
     AUTHOR "Test Author"
     EMAIL "test@example.com"
     DESCRIPTION "Test wheel with transitive library dependencies (lib_a → lib_b)"
-    PYTHON_REQUIRES ">=3.9"
+    PYTHON_REQUIRES ">=3.10"
     TARGET_DEPENDENCIES lib_a lib_b
 )
 

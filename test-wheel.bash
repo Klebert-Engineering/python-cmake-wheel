@@ -55,9 +55,9 @@ terminate_pid_tree() {
     # signals against that PID namespace instead of `taskkill`, which expects
     # native Windows PIDs and can silently miss the spawned service.
     #
-    # Keep this non-blocking on Windows: waiting/spinning in the MSYS shell can
-    # itself fail with `fork: Resource temporarily unavailable` during test
-    # teardown.
+    # Keep this non-blocking: waiting in MSYS can itself fail with `fork:
+    # Resource temporarily unavailable`. The add_wheel_test supervisor also
+    # stops native descendants that survive this signal, even after Bash exits.
     kill -TERM "$pid" >/dev/null 2>&1 || true
     return 0
   fi
